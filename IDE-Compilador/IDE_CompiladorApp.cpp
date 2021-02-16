@@ -9,25 +9,25 @@
 
 #include "IDE_CompiladorApp.h"
 
-//(*AppHeaders
+
 #include "IDE_CompiladorMain.h"
 #include <wx/image.h>
-//*)
 
 IMPLEMENT_APP(IDE_CompiladorApp);
 
 bool IDE_CompiladorApp::OnInit()
 {
-    //(*AppInitialize
-    bool wxsOK = true;
-    wxInitAllImageHandlers();
-    if ( wxsOK )
-    {
-    	IDE_CompiladorFrame* Frame = new IDE_CompiladorFrame(0);
-    	Frame->Show();
-    	SetTopWindow(Frame);
-    }
-    //*)
-    return wxsOK;
+
+    appFrame = new IDE_CompiladorFrame(nullptr);
+    appFrame->Layout();
+    appFrame->Show(true);
+
+    return true;
+
+}
+
+int IDE_CompiladorApp::OnExit(){
+
+    return 0;
 
 }

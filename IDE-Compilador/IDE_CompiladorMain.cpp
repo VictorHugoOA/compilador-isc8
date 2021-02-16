@@ -10,10 +10,10 @@
 #include "IDE_CompiladorMain.h"
 #include <wx/msgdlg.h>
 
-//(*InternalHeaders(IDE_CompiladorFrame)
+
 #include <wx/intl.h>
 #include <wx/string.h>
-//*)
+
 
 //helper functions
 enum wxbuildinfoformat {
@@ -41,62 +41,257 @@ wxString wxbuildinfo(wxbuildinfoformat format)
     return wxbuild;
 }
 
-//(*IdInit(IDE_CompiladorFrame)
-const long IDE_CompiladorFrame::idMenuQuit = wxNewId();
-const long IDE_CompiladorFrame::idMenuAbout = wxNewId();
-const long IDE_CompiladorFrame::ID_STATUSBAR1 = wxNewId();
-//*)
+wxBEGIN_EVENT_TABLE (IDE_CompiladorFrame, wxFrame)
+    // common
+    EVT_CLOSE (                      IDE_CompiladorFrame::OnClose)
+    // file
+    EVT_MENU (wxID_OPEN,             IDE_CompiladorFrame::OnFileOpen)
+    EVT_MENU (wxID_SAVE,             IDE_CompiladorFrame::OnFileSave)
+    EVT_MENU (wxID_SAVEAS,           IDE_CompiladorFrame::OnFileSaveAs)
+    EVT_MENU (wxID_CLOSE,            IDE_CompiladorFrame::OnFileClose)
+    // properties
+    EVT_MENU (myID_PROPERTIES,       IDE_CompiladorFrame::OnProperties)
+    EVT_MENU (wxID_EXIT,             IDE_CompiladorFrame::OnExit)
+    // Menu items with standard IDs forwarded to the editor.
+    EVT_MENU (wxID_CLEAR,            IDE_CompiladorFrame::OnEdit)
+    EVT_MENU (wxID_CUT,              IDE_CompiladorFrame::OnEdit)
+    EVT_MENU (wxID_COPY,             IDE_CompiladorFrame::OnEdit)
+    EVT_MENU (wxID_PASTE,            IDE_CompiladorFrame::OnEdit)
+    EVT_MENU (wxID_SELECTALL,        IDE_CompiladorFrame::OnEdit)
+    EVT_MENU (wxID_REDO,             IDE_CompiladorFrame::OnEdit)
+    EVT_MENU (wxID_UNDO,             IDE_CompiladorFrame::OnEdit)
+    EVT_MENU (wxID_FIND,             IDE_CompiladorFrame::OnEdit)
+    // And all our edit-related menu commands.
+    EVT_MENU_RANGE (myID_EDIT_FIRST, myID_EDIT_LAST,
+                                     IDE_CompiladorFrame::OnEdit)
+    // help
+    EVT_MENU (wxID_ABOUT,            IDE_CompiladorFrame::OnAbout)
+wxEND_EVENT_TABLE ()
 
-BEGIN_EVENT_TABLE(IDE_CompiladorFrame,wxFrame)
-    //(*EventTable(IDE_CompiladorFrame)
-    //*)
-END_EVENT_TABLE()
-
-IDE_CompiladorFrame::IDE_CompiladorFrame(wxWindow* parent,wxWindowID id)
+IDE_CompiladorFrame::IDE_CompiladorFrame(wxWindow* parent,wxWindowID id): wxFrame(parent, id, "Compilador ISC 8º", wxDefaultPosition, wxSize(800, 600))
 {
-    //(*Initialize(IDE_CompiladorFrame)
-    wxMenu* Menu1;
-    wxMenu* Menu2;
-    wxMenuBar* MenuBar1;
-    wxMenuItem* MenuItem1;
-    wxMenuItem* MenuItem2;
+    SetBackgroundColour(wxT("WHITE"));
 
-    Create(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE, _T("id"));
-    MenuBar1 = new wxMenuBar();
-    Menu1 = new wxMenu();
-    MenuItem1 = new wxMenuItem(Menu1, idMenuQuit, _("Quit\tAlt-F4"), _("Quit the application"), wxITEM_NORMAL);
-    Menu1->Append(MenuItem1);
-    MenuBar1->Append(Menu1, _("&File"));
-    Menu2 = new wxMenu();
-    MenuItem2 = new wxMenuItem(Menu2, idMenuAbout, _("About\tF1"), _("Show info about this application"), wxITEM_NORMAL);
-    Menu2->Append(MenuItem2);
-    MenuBar1->Append(Menu2, _("Help"));
-    SetMenuBar(MenuBar1);
-    StatusBar1 = new wxStatusBar(this, ID_STATUSBAR1, 0, _T("ID_STATUSBAR1"));
-    int __wxStatusBarWidths_1[1] = { -1 };
-    int __wxStatusBarStyles_1[1] = { wxSB_NORMAL };
-    StatusBar1->SetFieldsCount(1,__wxStatusBarWidths_1);
-    StatusBar1->SetStatusStyles(1,__wxStatusBarStyles_1);
-    SetStatusBar(StatusBar1);
+    menuBar = new wxMenuBar;
 
-    Connect(idMenuQuit,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&IDE_CompiladorFrame::OnQuit);
-    Connect(idMenuAbout,wxEVT_COMMAND_MENU_SELECTED,(wxObjectEventFunction)&IDE_CompiladorFrame::OnAbout);
-    //*)
+    CreateMenu();
+    editor = new EditorText(this, wxID_ANY);
+    editor->SetFocus();
+}
+
+void IDE_CompiladorFrame::OnClose(wxCloseEvent& event){
+    wxCommandEvent evt;
+    OnFileClose (evt);
+    if (editor && editor->Modified()) {
+        if (event.CanVeto()) event.Veto (true);
+        return;
+    }
+    Destroy();
+}
+
+void IDE_CompiladorFrame::OnAbout (wxCommandEvent &WXUNUSED(event)) {
+
+}
+
+void IDE_CompiladorFrame::OnExit (wxCommandEvent &WXUNUSED(event)) {
+    Close (true);
+}
+
+void IDE_CompiladorFrame::OnFileOpen (wxCommandEvent &WXUNUSED(event)) {
+    if (!editor) return;
+#if wxUSE_FILEDLG
+    wxString fname;
+    wxFileDialog dlg (this, wxT("Open file"), wxEmptyString, wxEmptyString, wxT("Any file (*)|*"),
+                      wxFD_OPEN | wxFD_FILE_MUST_EXIST | wxFD_CHANGE_DIR);
+    if (dlg.ShowModal() != wxID_OK) return;
+    fname = dlg.GetPath ();
+    FileOpen (fname);
+#endif // wxUSE_FILEDLG
+}
+
+void IDE_CompiladorFrame::OnFileSave (wxCommandEvent &WXUNUSED(event)) {
+    if (!editor) return;
+    if (!editor->Modified()) {
+        wxMessageBox (_("There is nothing to save!"), _("Save file"),
+                      wxOK | wxICON_EXCLAMATION);
+        return;
+    }
+    editor->SaveFile ();
+}
+
+void IDE_CompiladorFrame::OnFileSaveAs (wxCommandEvent &WXUNUSED(event)) {
+    if (!editor) return;
+#if wxUSE_FILEDLG
+    wxString filename = wxEmptyString;
+    wxFileDialog dlg (this, wxT("Save file"), wxEmptyString, wxEmptyString, wxT("Any file (*)|*"), wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+    if (dlg.ShowModal() != wxID_OK) return;
+    filename = dlg.GetPath();
+    editor->SaveFile (filename);
+#endif // wxUSE_FILEDLG
+}
+
+void IDE_CompiladorFrame::OnFileClose (wxCommandEvent &WXUNUSED(event)) {
+    if (!editor) return;
+    if (editor->Modified()) {
+        if (wxMessageBox (_("Text is not saved, save before closing?"), _("Close"),
+                          wxYES_NO | wxICON_QUESTION) == wxYES) {
+            editor->SaveFile();
+            if (editor->Modified()) {
+                wxMessageBox (_("Text could not be saved!"), _("Close abort"),
+                              wxOK | wxICON_EXCLAMATION);
+                return;
+            }
+        }
+    }
+    editor->SetFilename (wxEmptyString);
+    editor->ClearAll();
+    editor->SetSavePoint();
+}
+
+void IDE_CompiladorFrame::OnProperties (wxCommandEvent &WXUNUSED(event)) {
+    if (!editor) return;
+    EditProperties dlg(editor, 0);
+}
+
+void IDE_CompiladorFrame::OnEdit (wxCommandEvent &event) {
+    if (editor) editor->GetEventHandler()->ProcessEvent (event);
+}
+
+void IDE_CompiladorFrame::CreateMenu ()
+{
+    // File menu
+    wxMenu *menuFile = new wxMenu;
+    menuFile->Append (wxID_OPEN, _("&Open ..\tCtrl+O"));
+    menuFile->Append (wxID_SAVE, _("&Save\tCtrl+S"));
+    menuFile->Append (wxID_SAVEAS, _("Save &as ..\tCtrl+Shift+S"));
+    menuFile->Append (wxID_CLOSE, _("&Close\tCtrl+W"));
+    menuFile->AppendSeparator();
+    menuFile->Append (myID_PROPERTIES, _("Proper&ties ..\tCtrl+I"));
+    menuFile->AppendSeparator();
+    menuFile->Append (wxID_EXIT, _("&Quit\tCtrl+Q"));
+
+    // Edit menu
+    wxMenu *menuEdit = new wxMenu;
+    menuEdit->Append (wxID_UNDO, _("&Undo\tCtrl+Z"));
+    menuEdit->Append (wxID_REDO, _("&Redo\tCtrl+Shift+Z"));
+    menuEdit->AppendSeparator();
+    menuEdit->Append (wxID_CUT, _("Cu&t\tCtrl+X"));
+    menuEdit->Append (wxID_COPY, _("&Copy\tCtrl+C"));
+    menuEdit->Append (wxID_PASTE, _("&Paste\tCtrl+V"));
+    menuEdit->Append (wxID_CLEAR, _("&Delete\tDel"));
+    menuEdit->AppendSeparator();
+    menuEdit->Append (wxID_FIND, _("&Find\tCtrl+F"));
+    menuEdit->Enable (wxID_FIND, false);
+    menuEdit->Append (myID_FINDNEXT, _("Find &next\tF3"));
+    menuEdit->Enable (myID_FINDNEXT, false);
+    menuEdit->Append (myID_REPLACE, _("&Replace\tCtrl+H"));
+    menuEdit->Enable (myID_REPLACE, false);
+    menuEdit->Append (myID_REPLACENEXT, _("Replace &again\tShift+F4"));
+    menuEdit->Enable (myID_REPLACENEXT, false);
+    menuEdit->AppendSeparator();
+    menuEdit->Append (myID_BRACEMATCH, _("&Match brace\tCtrl+M"));
+    menuEdit->Append (myID_GOTO, _("&Goto\tCtrl+G"));
+    menuEdit->Enable (myID_GOTO, false);
+    menuEdit->AppendSeparator();
+    menuEdit->Append (myID_INDENTINC, _("&Indent increase\tTab"));
+    menuEdit->Append (myID_INDENTRED, _("I&ndent reduce\tShift+Tab"));
+    menuEdit->AppendSeparator();
+    menuEdit->Append (wxID_SELECTALL, _("&Select all\tCtrl+A"));
+    menuEdit->Append (myID_SELECTLINE, _("Select &line\tCtrl+L"));
+
+    // hilight submenu
+    wxMenu *menuHilight = new wxMenu;
+    int Nr;
+    for (Nr = 0; Nr < gLanguagePrefsSize; Nr++) {
+        menuHilight->Append (myID_HILIGHTFIRST + Nr,
+                             gLanguagePrefs [Nr].name);
+    }
+
+    // charset submenu
+    wxMenu *menuCharset = new wxMenu;
+    menuCharset->Append (myID_CHARSETANSI, _("&ANSI (Windows)"));
+    menuCharset->Append (myID_CHARSETMAC, _("&MAC (Macintosh)"));
+
+    // View menu
+    wxMenu *menuView = new wxMenu;
+    menuView->Append (myID_HILIGHTLANG, _("&Hilight language .."), menuHilight);
+    menuView->AppendSeparator();
+    menuView->AppendCheckItem (myID_FOLDTOGGLE, _("&Toggle current fold\tCtrl+T"));
+    menuView->AppendCheckItem (myID_OVERTYPE, _("&Overwrite mode\tIns"));
+    menuView->AppendCheckItem (myID_WRAPMODEON, _("&Wrap mode\tCtrl+U"));
+    menuView->AppendSeparator();
+    menuView->AppendCheckItem (myID_DISPLAYEOL, _("Show line &endings"));
+    menuView->AppendCheckItem (myID_INDENTGUIDE, _("Show &indent guides"));
+    menuView->AppendCheckItem (myID_LINENUMBER, _("Show line &numbers"));
+    menuView->AppendCheckItem (myID_LONGLINEON, _("Show &long line marker"));
+    menuView->AppendCheckItem (myID_WHITESPACE, _("Show white&space"));
+    menuView->AppendSeparator();
+    menuView->Append (myID_USECHARSET, _("Use &code page of .."), menuCharset);
+
+    // Annotations menu
+    wxMenu* menuAnnotations = new wxMenu;
+    menuAnnotations->Append(myID_ANNOTATION_ADD, _("&Add or edit an annotation..."),
+                            _("Add an annotation for the current line"));
+    menuAnnotations->Append(myID_ANNOTATION_REMOVE, _("&Remove annotation"),
+                            _("Remove the annotation for the current line"));
+    menuAnnotations->Append(myID_ANNOTATION_CLEAR, _("&Clear all annotations"));
+
+    wxMenu* menuAnnotationsStyle = new wxMenu;
+    menuAnnotationsStyle->AppendRadioItem(myID_ANNOTATION_STYLE_HIDDEN, _("&Hidden"));
+    menuAnnotationsStyle->AppendRadioItem(myID_ANNOTATION_STYLE_STANDARD, _("&Standard"));
+    menuAnnotationsStyle->AppendRadioItem(myID_ANNOTATION_STYLE_BOXED, _("&Boxed"));
+    menuAnnotations->AppendSubMenu(menuAnnotationsStyle, "&Style");
+
+    // change case submenu
+    wxMenu *menuChangeCase = new wxMenu;
+    menuChangeCase->Append (myID_CHANGEUPPER, _("&Upper case"));
+    menuChangeCase->Append (myID_CHANGELOWER, _("&Lower case"));
+
+    // convert EOL submenu
+    wxMenu *menuConvertEOL = new wxMenu;
+    menuConvertEOL->Append (myID_CONVERTCR, _("CR (&Linux)"));
+    menuConvertEOL->Append (myID_CONVERTCRLF, _("CR+LF (&Windows)"));
+    menuConvertEOL->Append (myID_CONVERTLF, _("LF (&Macintosh)"));
+
+    // Extra menu
+    wxMenu *menuExtra = new wxMenu;
+    menuExtra->AppendCheckItem (myID_READONLY, _("&Readonly mode"));
+    menuExtra->AppendSeparator();
+    menuExtra->Append (myID_CHANGECASE, _("Change &case to .."), menuChangeCase);
+    menuExtra->AppendSeparator();
+    menuExtra->Append (myID_CONVERTEOL, _("Convert line &endings to .."), menuConvertEOL);
+
+    // Window menu
+    wxMenu *menuWindow = new wxMenu;
+    menuWindow->Append (myID_PAGEPREV, _("&Previous\tCtrl+Shift+Tab"));
+    menuWindow->Append (myID_PAGENEXT, _("&Next\tCtrl+Tab"));
+
+    // Help menu
+    wxMenu *menuHelp = new wxMenu;
+    menuHelp->Append (wxID_ABOUT, _("&About ..\tCtrl+D"));
+
+    // construct menu
+    menuBar->Append (menuFile, _("&File"));
+    menuBar->Append (menuEdit, _("&Edit"));
+    menuBar->Append (menuView, _("&View"));
+    menuBar->Append (menuAnnotations, _("&Annotations"));
+    menuBar->Append (menuExtra, _("E&xtra"));
+    menuBar->Append (menuWindow, _("&Window"));
+    menuBar->Append (menuHelp, _("&Help"));
+    SetMenuBar (menuBar);
+
+    menuBar->Check(myID_ANNOTATION_STYLE_BOXED, true);
+}
+
+void IDE_CompiladorFrame::FileOpen (wxString fname)
+{
+    wxFileName w(fname); w.Normalize(); fname = w.GetFullPath();
+    editor->LoadFile (fname);
+    editor->SelectNone();
 }
 
 IDE_CompiladorFrame::~IDE_CompiladorFrame()
 {
-    //(*Destroy(IDE_CompiladorFrame)
-    //*)
+
 }
 
-void IDE_CompiladorFrame::OnQuit(wxCommandEvent& event)
-{
-    Close();
-}
-
-void IDE_CompiladorFrame::OnAbout(wxCommandEvent& event)
-{
-    wxString msg = wxbuildinfo(long_f);
-    wxMessageBox(msg, _("Welcome to..."));
-}

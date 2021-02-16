@@ -16,6 +16,7 @@
 					<Add option="-g" />
 					<Add option="-D__WXDEBUG__" />
 					<Add directory="C:/librerias/wxWidgets/lib/mswud" />
+					<Add directory="include" />
 				</Compiler>
 				<ResourceCompiler>
 					<Add directory="C:/librerias/wxWidgets/lib/gcc_lib/mswd" />
@@ -25,6 +26,7 @@
 					<Add library="C:/librerias/wxWidgets/lib/libwxmsw30ud_core.a" />
 					<Add library="C:/librerias/wxWidgets/lib/libwxpngd.a" />
 					<Add library="C:/librerias/wxWidgets/lib/libwxzlibd.a" />
+					<Add library="C:/librerias/wxWidgets/lib/libwxmsw30ud_stc.a" />
 					<Add directory="C:/librerias/wxWidgets/lib" />
 				</Linker>
 			</Target>
@@ -37,6 +39,7 @@
 				<Compiler>
 					<Add option="-O2" />
 					<Add directory="C:/librerias/wxWidgets/lib/mswu" />
+					<Add directory="include" />
 				</Compiler>
 				<ResourceCompiler>
 					<Add directory="C:/librerias/wxWidgets/lib/gcc_lib/msw" />
@@ -47,6 +50,7 @@
 					<Add library="C:/librerias/wxWidgets/lib/libwxmsw30u_core.a" />
 					<Add library="C:/librerias/wxWidgets/lib/libwxpng.a" />
 					<Add library="C:/librerias/wxWidgets/lib/libwxzlib.a" />
+					<Add library="C:/librerias/wxWidgets/lib/libwxmsw30u_stc.a" />
 					<Add directory="C:/librerias/wxWidgets/lib" />
 				</Linker>
 			</Target>
@@ -58,6 +62,7 @@
 			<Add option="-mthreads" />
 			<Add option="-D__GNUWIN32__" />
 			<Add option="-D__WXMSW__" />
+			<Add option="-DwxUSE_UNICODE" />
 			<Add directory="C:/librerias/wxWidgets/include" />
 		</Compiler>
 		<ResourceCompiler>
@@ -83,9 +88,13 @@
 		<Unit filename="IDE_CompiladorApp.h" />
 		<Unit filename="IDE_CompiladorMain.cpp" />
 		<Unit filename="IDE_CompiladorMain.h" />
+		<Unit filename="include/EditorText.h" />
+		<Unit filename="include/prefs.h" />
 		<Unit filename="resource.rc">
 			<Option compilerVar="WINDRES" />
 		</Unit>
+		<Unit filename="src/EditorText.cpp" />
+		<Unit filename="src/prefs.cpp" />
 		<Unit filename="wxsmith/IDE_Compiladorframe.wxs" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
