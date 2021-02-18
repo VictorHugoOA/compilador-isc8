@@ -13,7 +13,8 @@
 
 #include <wx/intl.h>
 #include <wx/string.h>
-
+#include "ResultsShow.h"
+#include "CompilerPhases.h"
 
 //helper functions
 enum wxbuildinfoformat {
@@ -40,7 +41,7 @@ wxString wxbuildinfo(wxbuildinfoformat format)
 
     return wxbuild;
 }
-
+//All event tables to function respond on menu
 wxBEGIN_EVENT_TABLE (IDE_CompiladorFrame, wxFrame)
     // common
     EVT_CLOSE (                      IDE_CompiladorFrame::OnClose)
@@ -66,39 +67,61 @@ wxBEGIN_EVENT_TABLE (IDE_CompiladorFrame, wxFrame)
                                      IDE_CompiladorFrame::OnEdit)
     // help
     EVT_MENU (wxID_ABOUT,            IDE_CompiladorFrame::OnAbout)
+    EVT_MENU (ID_COMPILE_EVENT,      IDE_CompiladorFrame::OnCompile)
 wxEND_EVENT_TABLE ()
 
 IDE_CompiladorFrame::IDE_CompiladorFrame(wxWindow* parent,wxWindowID id): wxFrame(parent, id, "Compilador ISC 8º", wxDefaultPosition, wxSize(800, 600))
 {
+    //sets the backgorund of the frame
     SetBackgroundColour(wxT("WHITE"));
 
+    //creates the menubar
     menuBar = new wxMenuBar;
 
+    //function to add all menu options
     CreateMenu();
+
+    vertical = new wxBoxSizer(wxVERTICAL);
+    horizontal = new wxBoxSizer(wxHORIZONTAL);
+    //Creates the text editor and set it ot focus, so we can start writing
     editor = new EditorText(this, wxID_ANY);
     editor->SetFocus();
+    //Creates the results panel
+    results = new ResultsShow(this, wxID_ANY);
+    phases = new CompilerPhases(this, wxID_ANY);
+    horizontal->Add(editor, 1, wxALL|wxEXPAND, 0);
+    horizontal->Add(phases, 1, wxALL|wxEXPAND, 0);
+
+    //Add its to the vertical sizer so we can divide the windows
+    vertical->Add(horizontal, 10, wxALL|wxEXPAND, 0);//All windows can expand to vertical full size and horizontal full size
+    vertical->Add(results, 2, wxALL|wxEXPAND, 0);//The proportion for windows are 80% text editor 20% the results panel
+    SetSizerAndFit(vertical);//set fit sizer with windows
+    SetSize(wxDefaultCoord, wxDefaultCoord, 800, 600);//Set again size for the frame
 }
 
 void IDE_CompiladorFrame::OnClose(wxCloseEvent& event){
     wxCommandEvent evt;
     OnFileClose (evt);
+    //Makes sure the file is saved
     if (editor && editor->Modified()) {
         if (event.CanVeto()) event.Veto (true);
         return;
     }
+    //Destroy all widgets and exits program
     Destroy();
 }
 
 void IDE_CompiladorFrame::OnAbout (wxCommandEvent &WXUNUSED(event)) {
-
+//WIP
 }
-
+//Closes the app
 void IDE_CompiladorFrame::OnExit (wxCommandEvent &WXUNUSED(event)) {
     Close (true);
 }
 
 void IDE_CompiladorFrame::OnFileOpen (wxCommandEvent &WXUNUSED(event)) {
     if (!editor) return;
+    //this is used in case wxUSE_FILEDLG is defined in compile editor
 #if wxUSE_FILEDLG
     wxString fname;
     wxFileDialog dlg (this, wxT("Open file"), wxEmptyString, wxEmptyString, wxT("Any file (*)|*"),
@@ -111,6 +134,7 @@ void IDE_CompiladorFrame::OnFileOpen (wxCommandEvent &WXUNUSED(event)) {
 
 void IDE_CompiladorFrame::OnFileSave (wxCommandEvent &WXUNUSED(event)) {
     if (!editor) return;
+    //if the text haven't been modified, message box to show
     if (!editor->Modified()) {
         wxMessageBox (_("There is nothing to save!"), _("Save file"),
                       wxOK | wxICON_EXCLAMATION);
@@ -121,6 +145,7 @@ void IDE_CompiladorFrame::OnFileSave (wxCommandEvent &WXUNUSED(event)) {
 
 void IDE_CompiladorFrame::OnFileSaveAs (wxCommandEvent &WXUNUSED(event)) {
     if (!editor) return;
+    //this is used in case wxUSE_FILEDLG is defined in compile editor
 #if wxUSE_FILEDLG
     wxString filename = wxEmptyString;
     wxFileDialog dlg (this, wxT("Save file"), wxEmptyString, wxEmptyString, wxT("Any file (*)|*"), wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
@@ -129,13 +154,15 @@ void IDE_CompiladorFrame::OnFileSaveAs (wxCommandEvent &WXUNUSED(event)) {
     editor->SaveFile (filename);
 #endif // wxUSE_FILEDLG
 }
-
+//File on close
 void IDE_CompiladorFrame::OnFileClose (wxCommandEvent &WXUNUSED(event)) {
     if (!editor) return;
+    //Whenever the file has been modified, the text editor will ask to save it if you care.
     if (editor->Modified()) {
         if (wxMessageBox (_("Text is not saved, save before closing?"), _("Close"),
                           wxYES_NO | wxICON_QUESTION) == wxYES) {
             editor->SaveFile();
+            //In case the text editor couldn't save the file
             if (editor->Modified()) {
                 wxMessageBox (_("Text could not be saved!"), _("Close abort"),
                               wxOK | wxICON_EXCLAMATION);
@@ -147,12 +174,12 @@ void IDE_CompiladorFrame::OnFileClose (wxCommandEvent &WXUNUSED(event)) {
     editor->ClearAll();
     editor->SetSavePoint();
 }
-
+//File properties dialog
 void IDE_CompiladorFrame::OnProperties (wxCommandEvent &WXUNUSED(event)) {
     if (!editor) return;
     EditProperties dlg(editor, 0);
 }
-
+//Checks edit event to text editor;
 void IDE_CompiladorFrame::OnEdit (wxCommandEvent &event) {
     if (editor) editor->GetEventHandler()->ProcessEvent (event);
 }
@@ -270,10 +297,15 @@ void IDE_CompiladorFrame::CreateMenu ()
     wxMenu *menuHelp = new wxMenu;
     menuHelp->Append (wxID_ABOUT, _("&About ..\tCtrl+D"));
 
+    //Compile menu
+    wxMenu *menuCompile = new wxMenu;
+    menuCompile->Append(ID_COMPILE_EVENT, _("&Compile\tF5"));
+
     // construct menu
     menuBar->Append (menuFile, _("&File"));
     menuBar->Append (menuEdit, _("&Edit"));
     menuBar->Append (menuView, _("&View"));
+    menuBar->Append (menuCompile, _("&Compile"));
     menuBar->Append (menuAnnotations, _("&Annotations"));
     menuBar->Append (menuExtra, _("E&xtra"));
     menuBar->Append (menuWindow, _("&Window"));
@@ -282,12 +314,16 @@ void IDE_CompiladorFrame::CreateMenu ()
 
     menuBar->Check(myID_ANNOTATION_STYLE_BOXED, true);
 }
-
+//Open's File to edit
 void IDE_CompiladorFrame::FileOpen (wxString fname)
 {
     wxFileName w(fname); w.Normalize(); fname = w.GetFullPath();
     editor->LoadFile (fname);
     editor->SelectNone();
+}
+
+void IDE_CompiladorFrame::OnCompile(wxCommandEvent& WXUNUSED(event)){
+    wxMessageBox("Compiler WIP", "Compile error");
 }
 
 IDE_CompiladorFrame::~IDE_CompiladorFrame()

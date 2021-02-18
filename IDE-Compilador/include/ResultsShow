@@ -1,0 +1,16 @@
+#ifndef RESULTSSHOW_
+#define RESULTSSHOW_
+
+
+class ResultsShow
+{
+    public:
+        ResultsShow();
+        virtual ~ResultsShow();
+
+    protected:
+
+    private:
+};
+
+#endif // RESULTSSHOW_

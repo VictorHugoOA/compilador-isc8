@@ -41,6 +41,7 @@ const char* CppWordlist3 =
     "retval sa section see showinitializer since skip skipline struct "
     "subsection test throw todo typedef union until var verbatim "
     "verbinclude version warning weakgroup $ @ \"\" & < > # { }";
+const char* CppWordError = "error failed warning";
 
 // Python
 const char* PythonWordlist1 =
@@ -81,7 +82,7 @@ const LanguageInfo gLanguagePrefs [] = {
       {STC_TYPE_COMMENT_SPECIAL, NULL}, // DOXY
       {STC_TYPE_WORD2, CppWordlist2}, // EXTRA WORDS
       {STC_TYPE_WORD3, CppWordlist3}, // DOXY KEYWORDS
-      {STC_TYPE_ERROR, NULL}, // KEYWORDS ERROR
+      {STC_TYPE_ERROR, CppWordError}, // KEYWORDS ERROR
       {-1, NULL},
       {-1, NULL},
       {-1, NULL},
@@ -171,7 +172,7 @@ const LanguageInfo gLanguagePrefs [] = {
       {-1, NULL}},
      0}
 };
-
+//Global variable for size
 const int gLanguagePrefsSize = WXSIZEOF(gLanguagePrefs);
 
 
@@ -334,5 +335,5 @@ const StyleInfo gStylePrefs [] = {
      wxT(""), 10, 0, 0}
 
     };
-
+//Globar variable for define all styles
 const int gStylePrefsSize = WXSIZEOF(gStylePrefs);

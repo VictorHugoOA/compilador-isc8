@@ -63,6 +63,7 @@
 #define PAGE_STYLE_TYPES _("Style types")
 #define STYLE_TYPES_COUNT 32
 
+//Common properties for editor.
 struct CommonInfo{
     bool syntaxEnable;
     bool foldEnable;
@@ -76,9 +77,10 @@ struct CommonInfo{
     bool longLineOnEnable;
     bool whiteSpaceEnable;
 };
-
+//Common properties used global
 extern const CommonInfo gCommonPrefs;
 
+//Struct that declares all info necesary for the language of the file
 struct LanguageInfo{
     const char* name;
     const char* filepattern;
@@ -93,6 +95,7 @@ struct LanguageInfo{
 extern const LanguageInfo gLanguagePrefs[];
 extern const int gLanguagePrefsSize;
 
+//Text editor changes for personal use
 struct StyleInfo{
     const wxChar* name;
     const wxChar* foreground;
@@ -166,9 +169,9 @@ enum {
     myID_PREFS_LANGUAGE,
     myID_PREFS_STYLETYPE,
     myID_PREFS_KEYWORDS,
+    ID_COMPILE_EVENT
 };
 
-extern wxString *gAppNAme;
 
 
 #endif // PREFS_H_INCLUDED

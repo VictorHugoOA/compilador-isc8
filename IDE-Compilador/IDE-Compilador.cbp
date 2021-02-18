@@ -88,12 +88,16 @@
 		<Unit filename="IDE_CompiladorApp.h" />
 		<Unit filename="IDE_CompiladorMain.cpp" />
 		<Unit filename="IDE_CompiladorMain.h" />
+		<Unit filename="include/CompilerPhases.h" />
 		<Unit filename="include/EditorText.h" />
+		<Unit filename="include/ResultsShow.h" />
 		<Unit filename="include/prefs.h" />
 		<Unit filename="resource.rc">
 			<Option compilerVar="WINDRES" />
 		</Unit>
+		<Unit filename="src/CompilerPhases.cpp" />
 		<Unit filename="src/EditorText.cpp" />
+		<Unit filename="src/ResultsShow.cpp" />
 		<Unit filename="src/prefs.cpp" />
 		<Unit filename="wxsmith/IDE_Compiladorframe.wxs" />
 		<Extensions>

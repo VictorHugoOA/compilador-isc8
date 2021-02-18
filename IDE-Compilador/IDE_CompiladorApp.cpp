@@ -18,6 +18,7 @@ IMPLEMENT_APP(IDE_CompiladorApp);
 bool IDE_CompiladorApp::OnInit()
 {
 
+//Just initialize from fro text editor.
     appFrame = new IDE_CompiladorFrame(nullptr);
     appFrame->Layout();
     appFrame->Show(true);

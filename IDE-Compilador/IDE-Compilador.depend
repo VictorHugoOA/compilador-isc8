@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1613505112 source:d:\data\documentos\github\compilador-isc8\ide-compilador\ide_compiladorapp.cpp
+1613679973 source:d:\data\documentos\github\compilador-isc8\ide-compilador\ide_compiladorapp.cpp
 	"IDE_CompiladorApp.h"
 	"IDE_CompiladorMain.h"
 	<wx/image.h>
@@ -1691,7 +1691,7 @@
 1587557368 c:\librerias\wxwidgets\include\wx\univ\theme.h
 	"wx/string.h"
 
-1613502892 d:\data\documentos\github\compilador-isc8\ide-compilador\ide_compiladormain.h
+1613687663 d:\data\documentos\github\compilador-isc8\ide-compilador\ide_compiladormain.h
 	<wx/frame.h>
 	<wx/wx.h>
 	"wx/config.h"
@@ -1805,11 +1805,13 @@
 	"wx/list.h"
 	"wx/dynarray.h"
 
-1613504579 source:d:\data\documentos\github\compilador-isc8\ide-compilador\ide_compiladormain.cpp
+1613687492 source:d:\data\documentos\github\compilador-isc8\ide-compilador\ide_compiladormain.cpp
 	"IDE_CompiladorMain.h"
 	<wx/msgdlg.h>
 	<wx/intl.h>
 	<wx/string.h>
+	"ResultsShow.h"
+	"CompilerPhases.h"
 
 1587557368 c:\librerias\wxwidgets\include\wx\msgdlg.h
 	"wx/defs.h"
@@ -2265,17 +2267,17 @@
 	"prefs.h"
 	<wx/dialog.h>
 
-1613087197 source:d:\data\documentos\github\compilador-isc8\ide-compilador\src\editortext.cpp
+1613679776 source:d:\data\documentos\github\compilador-isc8\ide-compilador\src\editortext.cpp
 	"EditorText.h"
 	"prefs.h"
 	<wx/wx.h>
 	"wx/file.h"
 	"wx/filename.h"
 
-1613086366 d:\data\documentos\github\compilador-isc8\ide-compilador\include\prefs.h
+1613687852 d:\data\documentos\github\compilador-isc8\ide-compilador\include\prefs.h
 	<wx/stc/stc.h>
 
-1613086461 source:d:\data\documentos\github\compilador-isc8\ide-compilador\src\prefs.cpp
+1613683929 source:d:\data\documentos\github\compilador-isc8\ide-compilador\src\prefs.cpp
 	"prefs.h"
 
 1587557368 c:\librerias\wxwidgets\include\wx\wx.h
@@ -3218,4 +3220,19 @@
 
 1587557368 c:\librerias\wxwidgets\include\wx\os2\notebook.h
 	"wx/control.h"
+
+1613684900 source:d:\data\documentos\github\compilador-isc8\ide-compilador\src\resultsshow.cpp
+	"ResultsShow.h"
+	"EditorText.h"
+
+1613684860 d:\data\documentos\github\compilador-isc8\ide-compilador\include\resultsshow.h
+	<wx/notebook.h>
+	<wx/panel.h>
+
+1613687565 source:d:\data\documentos\github\compilador-isc8\ide-compilador\src\compilerphases.cpp
+	"CompilerPhases.h"
+	"EditorText.h"
+
+1613687331 d:\data\documentos\github\compilador-isc8\ide-compilador\include\compilerphases.h
+	<wx/notebook.h>
 

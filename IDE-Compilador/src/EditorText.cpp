@@ -638,6 +638,7 @@ bool EditorText::SaveFile(const wxString &filename){
 }
 
 bool EditorText::Modified(){
+    //checks if the text file has been modified
     return(GetModify() && !GetReadOnly());
 }
 

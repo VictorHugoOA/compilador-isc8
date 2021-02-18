@@ -26,6 +26,8 @@
 #include "IDE_CompiladorApp.h"
 
 class IDE_CompiladorApp;
+class ResultsShow;
+class CompilerPhases;
 
 enum{
     ID_HELLO = 1
@@ -40,7 +42,7 @@ class IDE_CompiladorFrame: public wxFrame
         IDE_CompiladorFrame(wxWindow* parent,wxWindowID id = -1);
         virtual ~IDE_CompiladorFrame();
 
-
+        //Commong events
         void OnClose (wxCloseEvent &event);
         void OnAbout(wxCommandEvent& event);
         void OnResize(wxSizeEvent& event);
@@ -58,13 +60,17 @@ class IDE_CompiladorFrame: public wxFrame
         //! edit events
         void OnEdit (wxCommandEvent &event);
         void OnExit (wxCommandEvent &event);
+        void OnCompile(wxCommandEvent &event);
 
     private:
         EditorText* editor; //The code editor.
+        wxBoxSizer* vertical; //The divider who separates the results of compiling
+        wxBoxSizer* horizontal;
         void FileOpen(wxString fname);
-
-        wxMenuBar *menuBar;
-        void CreateMenu();
+        ResultsShow* results;//The bottom panel with view to error and results compilation
+        CompilerPhases* phases;
+        wxMenuBar *menuBar;//object to represents menubar
+        void CreateMenu();//Function to create the menu bar and add funcionality
 
         DECLARE_EVENT_TABLE();
 };
