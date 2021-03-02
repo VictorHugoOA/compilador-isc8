@@ -451,6 +451,7 @@ bool EditorText::InitializePrefs(const wxString &name){
             break;
         }
     }
+
     if (!found) return false;
 
     // set lexer and language
