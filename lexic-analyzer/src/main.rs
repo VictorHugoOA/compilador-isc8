@@ -38,6 +38,73 @@ mod compiler{
         fn is_delimiter (c: char) -> bool{
             c == ' ' || c == '\t' || c == '\n'
         }
+        fn is_reserved_word(lexema: &str) -> TokenType{
+           match lexema {
+               "program" => {
+                   return TokenType::TK_PROG
+               }
+
+               "if" => {
+                   return TokenType::TK_IF
+               }
+
+               "fi" => {
+                   return TokenType::TK_FI
+               }
+
+               "else" => {
+                   return TokenType::TK_ELSE
+               }
+
+               "do" => {
+                   return TokenType::TK_DO
+               }
+
+               "until" => {
+                   return TokenType::TK_UNITL
+               }
+
+               "while" => {
+                   return TokenType::TK_WHILE
+               }
+
+               "read" => {
+                   return TokenType::TK_READ
+               }
+
+               "write" => {
+                   return TokenType::TK_WRITE
+               }
+
+               "float" => {
+                   return TokenType::TK_FLOAT
+               }
+
+               "int" => {
+                   return TokenType::TK_INT
+               }
+
+               "bool" => {
+                   return TokenType::TK_BOOL
+               }
+
+               "not" => {
+                   return TokenType::TK_NOT
+               }
+
+               "and" => {
+                   return TokenType::TK_AND
+               }
+
+               "or" => {
+                   return TokenType::TK_OR
+               }
+
+               _ => {
+                   return TokenType::TK_ID
+               }
+           } 
+        }
         pub fn get_tokens(file: &Vec<char>) -> Vec<Token>{
             let mut c: char = '-';
             let mut tokens: Vec<Token> = Vec::new();
@@ -47,8 +114,8 @@ mod compiler{
             while current_char < (file.len() - 1) {
                 let mut token: Token = Token{token: TokenType::TK_ERROR, lexema: String::from("")};
                 done = false;
+                state = StateType::ST_START;
                 while !done {
-                    // println!("{}", done);
 
                     match state {
                         StateType::ST_START => {
@@ -125,16 +192,28 @@ mod compiler{
                         StateType::ST_NUM => {
                             c = file[current_char];
                             current_char = current_char + 1;
+
                             token.lexema.push(c);
                             if !c.is_digit(10) {
                                 token.token = TokenType::TK_NUM;
                                 state = StateType::ST_DONE;
                                 current_char = current_char - 1;
                                 done = true;
+                                token.lexema.pop();
                             }
                         }
                         StateType::ST_ID => {
-
+                            c = file[current_char];
+                            current_char = current_char + 1;
+                            token.lexema.push(c);
+                            if !(c.is_alphanumeric() || c == '_'){
+                                state = StateType::ST_DONE;
+                                token.token= TokenType::TK_ID;
+                                current_char = current_char - 1;
+                                token.lexema.pop();
+                                token.token = is_reserved_word(&token.lexema);
+                                done = true;
+                            }
                         }
                         _ =>{}
                     }
