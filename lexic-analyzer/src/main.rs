@@ -111,11 +111,21 @@ mod compiler{
             let mut state: StateType = StateType::ST_START;
             let mut current_char: usize = 0;
             let mut done: bool = false;
-            while current_char < (file.len() - 1) {
+            let mut exit_loop: bool = false;
+            while !exit_loop {
                 let mut token: Token = Token{token: TokenType::TK_ERROR, lexema: String::from("")};
                 done = false;
                 state = StateType::ST_START;
                 while !done {
+
+                    if current_char == (file.len() - 1) {
+                        token.token = TokenType::TK_EOF;
+                        state = StateType::ST_DONE;
+                        token.lexema.push('\0');
+                        done = true;
+                        exit_loop = true;
+                        continue;
+                    }
 
                     match state {
                         StateType::ST_START => {
@@ -176,12 +186,20 @@ mod compiler{
                                 token.lexema.push(c);
                                 done = true;
                             }
-                            else if current_char == (file.len() - 1) {
-                                token.token = TokenType::TK_EOF;
+                            else if c == '*'{
+                                token.token = TokenType::TK_ASTERISC;
                                 state = StateType::ST_DONE;
                                 token.lexema.push(c);
                                 done = true;
                             }
+                            else if c == '/'{
+                                token.token = TokenType::TK_SLASH;
+                                state = StateType::ST_DONE;
+                                token.lexema.push(c);
+                                done = true;
+                            }
+
+
                             else {
                                 token.token = TokenType::TK_ERROR;
                                 state = StateType::ST_DONE;
@@ -228,7 +246,10 @@ mod compiler{
 
 use crate::compiler::Scanner;
 use std::fs;
+use std::env;
 fn main() {
+    let args: Vec<String> = env::args().collect();
+    println!("{:?}", args);
     let contents = fs::read_to_string("prueba.tny").expect("Could find file");
     println!("{}", contents);
     let vectorChars: Vec<char> = contents.chars().collect();
