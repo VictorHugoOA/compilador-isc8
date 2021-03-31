@@ -4,13 +4,13 @@ mod compiler{
     //Es un enumerador para los tokens del lenguaje para el que vamos a crear el compilador
     pub enum TokenType{
         // Tokens para definir bloques de programa
-        TK_BEGIN, TK_END, 
+        TK_BEGIN, TK_END, TK_COMMENT,
         // para leer y escribir variables
         TK_READ, TK_WRITE,
         // Tokens multicaracter para numeros o identificadores
         TK_ID, TK_NUM, TK_INT, TK_FLOAT, TK_BOOL,
         //Símbolos especiales 
-        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC, TK_SLASH, TK_EXP, TK_LT, TK_LTE, TK_GT, TK_GTE, TK_EQ, TK_DIF, TK_LKEY, TK_RKEY,
+        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC, TK_SLASH, TK_EXP, TK_LT, TK_LTE, TK_GT, TK_GTE, TK_EQ, TK_DIF, 
         //Tokens para casos especiales
         TK_EOF, TK_ERROR,
         //Tokens para flujo de operaciones
@@ -32,7 +32,7 @@ mod compiler{
         //Son los estados de la máquina para el autómata
         #[derive(Debug)]
         enum StateType{
-            ST_START, ST_ID, ST_NUM, ST_LPAREN, ST_RPAREN, ST_SEMICOLON, ST_COMMA, ST_ASSIGN, ST_ADD, ST_MINUS, ST_EOF, ST_ERROR, ST_DONE
+            ST_START, ST_ID, ST_NUM, ST_COMMENT, ST_SEMICOLON, ST_COMMA, ST_ASSIGN, ST_ADD, ST_MINUS, ST_EOF, ST_ERROR, ST_DONE
         }
 
         fn is_delimiter (c: char) -> bool{
@@ -118,6 +118,10 @@ mod compiler{
                 state = StateType::ST_START;
                 while !done {
 
+                    // println!("{}", exit_loop);
+                    // println!("{}", done);
+                    // println!("{:?}", state);
+
                     if current_char == (file.len() - 1) {
                         token.token = TokenType::TK_EOF;
                         state = StateType::ST_DONE;
@@ -158,6 +162,11 @@ mod compiler{
                                 token.lexema.push(c);
                                 done = true;
                             }
+                            else if c == '{' {
+                                token.token = TokenType::TK_COMMENT;
+                                state = StateType::ST_COMMENT;
+                                token.lexema.push(c);
+                            }
                             else if c == ';' {
                                 token.token = TokenType::TK_SEMICOLON;
                                 state = StateType::ST_DONE;
@@ -192,6 +201,7 @@ mod compiler{
                                 token.lexema.push(c);
                                 done = true;
                             }
+
                             else if c == '/'{
                                 token.token = TokenType::TK_SLASH;
                                 state = StateType::ST_DONE;
@@ -199,6 +209,76 @@ mod compiler{
                                 done = true;
                             }
 
+                            else if c == '^'{
+                                token.token = TokenType::TK_EXP;
+                                state = StateType::ST_DONE;
+                                token.lexema.push(c);
+                                done = true;
+                            }
+
+                            else if c == '='{
+                                token.lexema.push(c);
+                                token.token = TokenType::TK_ERROR;
+                                state = StateType::ST_DONE;
+                                c = file[current_char];
+                                current_char = current_char + 1;
+                                if(c == '='){
+                                    token.lexema.push(c);
+                                    token.token = TokenType::TK_EQ;
+                                }
+                                else{
+                                    current_char = current_char - 1;
+                                }
+                                done = true;
+                            }
+
+                            else if c == '<'{
+                                token.lexema.push(c);
+                                token.token = TokenType::TK_LT;
+                                state = StateType::ST_DONE;
+                                c = file[current_char];
+                                current_char = current_char + 1;
+                                if(c == '='){
+                                    token.lexema.push(c);
+                                    token.token = TokenType::TK_LTE;
+                                }
+                                else{
+                                    current_char = current_char - 1;
+                                }
+                                done = true;
+                            }
+
+                            else if c == '>'{
+                                token.lexema.push(c);
+                                token.token = TokenType::TK_GT;
+                                state = StateType::ST_DONE;
+                                c = file[current_char];
+                                current_char = current_char + 1;
+                                if(c == '='){
+                                    token.lexema.push(c);
+                                    token.token = TokenType::TK_GTE;
+                                }
+                                else{
+                                    current_char = current_char - 1;
+                                }
+                                done = true;
+                            }
+
+                            else if c == '!'{
+                                token.lexema.push(c);
+                                token.token = TokenType::TK_ERROR;
+                                state = StateType::ST_DONE;
+                                c = file[current_char];
+                                current_char = current_char + 1;
+                                if(c == '='){
+                                    token.lexema.push(c);
+                                    token.token = TokenType::TK_DIF;
+                                }
+                                else{
+                                    current_char = current_char - 1;
+                                }
+                                done = true;
+                            }
 
                             else {
                                 token.token = TokenType::TK_ERROR;
@@ -233,7 +313,32 @@ mod compiler{
                                 done = true;
                             }
                         }
-                        _ =>{}
+                        StateType::ST_ASSIGN => {
+                            c = file[current_char];
+                            current_char = current_char + 1;
+                            token.lexema.push(c);
+                            if(c == '='){
+                                token.token = TokenType::TK_ASSIGN;
+                                state = StateType::ST_DONE;
+                                done = true;
+                            }
+                        }
+                        StateType::ST_COMMENT => {
+                            c = file[current_char];
+                            current_char = current_char + 1;
+                            token.lexema.push(c);
+                            if(c == '}'){
+                                token.token = TokenType::TK_COMMENT;
+                                state = StateType::ST_DONE;
+                                done = true;
+                            }
+                        }
+                        _ =>{
+                            token.token = TokenType::TK_ERROR;
+                            state = StateType::ST_DONE;
+                            token.lexema.push(c);
+                            done = true;
+                        }
                     }
                 }
                 tokens.push(token);
@@ -249,11 +354,9 @@ use std::fs;
 use std::env;
 fn main() {
     let args: Vec<String> = env::args().collect();
-    println!("{:?}", args);
-    let contents = fs::read_to_string("prueba.tny").expect("Could find file");
-    println!("{}", contents);
-    let vectorChars: Vec<char> = contents.chars().collect();
-    let length = vectorChars.len();
-    println!("{}", length);
-    println!("{:?}", Scanner::get_tokens(&vectorChars));
+    let contents = fs::read_to_string(&args[1]).expect("Lo siento, no pudimos abrir el archivo o no se encuentra");
+    let vector_chars: Vec<char> = contents.chars().collect();
+    let token_vector = Scanner::get_tokens(&vector_chars);
+
+    println!("{:?}", Scanner::get_tokens(&vector_chars));
 }
