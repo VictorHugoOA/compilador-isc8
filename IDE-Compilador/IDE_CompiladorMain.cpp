@@ -13,8 +13,13 @@
 
 #include <wx/intl.h>
 #include <wx/string.h>
+#include <wx/process.h>
+#include <wx/txtstrm.h>
 #include "ResultsShow.h"
 #include "CompilerPhases.h"
+#include <stdlib.h>
+
+#define LEXIC_PATH "D:\\data\\Documentos\\GitHub\\compilador-isc8\\lexic-analyzer\\target\\release\\lexic_analyzer.exe "
 
 //helper functions
 enum wxbuildinfoformat {
@@ -136,8 +141,8 @@ void IDE_CompiladorFrame::OnFileSave (wxCommandEvent &WXUNUSED(event)) {
     if (!editor) return;
     //if the text haven't been modified, message box to show
     if (!editor->Modified()) {
-        wxMessageBox (_("There is nothing to save!"), _("Save file"),
-                      wxOK | wxICON_EXCLAMATION);
+        //wxMessageBox (_("There is nothing to save!"), _("Save file"),
+          //            wxOK | wxICON_EXCLAMATION);
         return;
     }
     editor->SaveFile ();
@@ -322,8 +327,37 @@ void IDE_CompiladorFrame::FileOpen (wxString fname)
     editor->SelectNone();
 }
 
-void IDE_CompiladorFrame::OnCompile(wxCommandEvent& WXUNUSED(event)){
-    wxMessageBox("Compiler WIP", "Compile error");
+void IDE_CompiladorFrame::OnCompile(wxCommandEvent& event){
+    wxMessageBox(editor->GetFilename(), _("Archivo de compilación"));
+
+    //wxString Command(wxT(LEXIC_PATH));
+    //Command.Append(editor->GetFilename());
+
+    wxString Command(wxT("cd"));
+
+    wxString Output;
+
+    wxProcess* Proc = wxProcess::Open(Command);
+    if(!Proc){
+        wxLogError(wxT("Failed to launch the command"));
+        return;
+    }
+
+    wxInputStream* InputCommand = Proc->GetInputStream();
+
+    if(!InputCommand){
+        wxLogError(wxT("Failed to connect to child stdout"));
+        return;
+    }
+
+    while(InputCommand->CanRead()){
+        char Buffer[4096];
+        Buffer[InputCommand->Read(Buffer, WXSIZEOF(Buffer) - 1).LastRead()] = '\0';
+        Output.Append(Buffer);
+    }
+
+    wxMessageBox(Output, "Mensaje de salida");
+
 }
 
 IDE_CompiladorFrame::~IDE_CompiladorFrame()

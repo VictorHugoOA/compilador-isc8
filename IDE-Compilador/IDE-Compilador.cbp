@@ -63,6 +63,7 @@
 			<Add option="-D__GNUWIN32__" />
 			<Add option="-D__WXMSW__" />
 			<Add option="-DwxUSE_UNICODE" />
+			<Add option="-DwxUSE_FILEDLG" />
 			<Add directory="C:/librerias/wxWidgets/include" />
 		</Compiler>
 		<ResourceCompiler>

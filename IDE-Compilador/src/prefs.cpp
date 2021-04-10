@@ -42,6 +42,12 @@ const char* CppWordlist3 =
     "subsection test throw todo typedef union until var verbatim "
     "verbinclude version warning weakgroup $ @ \"\" & < > # { }";
 const char* CppWordError = "error failed warning";
+const char* TnyWordList1 = "bool "
+                            ""
+                            "program else do until while repeat "
+                            "if fi then "
+                            "read write "
+                            "not and or ";
 
 // Python
 const char* PythonWordlist1 =
@@ -70,6 +76,42 @@ const LanguageInfo gLanguagePrefs [] = {
       {STC_TYPE_COMMENT_DOC, NULL},
       {STC_TYPE_NUMBER, NULL},
       {STC_TYPE_WORD1, CppWordlist1}, // KEYWORDS
+      {STC_TYPE_STRING, NULL},
+      {STC_TYPE_CHARACTER, NULL},
+      {STC_TYPE_UUID, NULL},
+      {STC_TYPE_PREPROCESSOR, NULL},
+      {STC_TYPE_OPERATOR, NULL},
+      {STC_TYPE_IDENTIFIER, NULL},
+      {STC_TYPE_STRING_EOL, NULL},
+      {STC_TYPE_DEFAULT, NULL}, // VERBATIM
+      {STC_TYPE_REGEX, NULL},
+      {STC_TYPE_COMMENT_SPECIAL, NULL}, // DOXY
+      {STC_TYPE_WORD2, CppWordlist2}, // EXTRA WORDS
+      {STC_TYPE_WORD3, CppWordlist3}, // DOXY KEYWORDS
+      {STC_TYPE_ERROR, CppWordError}, // KEYWORDS ERROR
+      {-1, NULL},
+      {-1, NULL},
+      {-1, NULL},
+      {-1, NULL},
+      {-1, NULL},
+      {-1, NULL},
+      {-1, NULL},
+      {-1, NULL},
+      {-1, NULL},
+      {-1, NULL},
+      {-1, NULL},
+      {-1, NULL},
+      {-1, NULL}},
+     STC_FOLD_COMMENT | STC_FOLD_COMPACT | STC_FOLD_PREPROC},
+     {"Tiny",
+     "*.tny;*.TNY",
+     wxSTC_LEX_CPP,
+     {{STC_TYPE_DEFAULT, NULL},
+      {STC_TYPE_COMMENT, "{}"},
+      {STC_TYPE_COMMENT_LINE, NULL},
+      {STC_TYPE_COMMENT_DOC, NULL},
+      {STC_TYPE_NUMBER, NULL},
+      {STC_TYPE_WORD1, TnyWordList1}, // KEYWORDS
       {STC_TYPE_STRING, NULL},
       {STC_TYPE_CHARACTER, NULL},
       {STC_TYPE_UUID, NULL},

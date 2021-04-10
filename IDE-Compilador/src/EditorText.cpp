@@ -584,14 +584,14 @@ bool EditorText::LoadFile(){
 bool EditorText::LoadFile(const wxString& filename){
 
     // load file in edit and clear undo
-    if (!filename.empty()) m_filename = filename;
+    if (!filename.empty()) fileName = filename;
 
-    wxStyledTextCtrl::LoadFile(m_filename);
+    wxStyledTextCtrl::LoadFile(fileName);
 
     EmptyUndoBuffer();
 
     // determine lexer language
-    wxFileName fname (m_filename);
+    wxFileName fname (fileName);
     InitializePrefs (DeterminePrefs (fname.GetFullName()));
 
     return true;
