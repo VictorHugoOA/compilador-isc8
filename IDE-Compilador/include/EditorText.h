@@ -82,6 +82,8 @@ class EditorText: public wxStyledTextCtrl
         bool SaveFile();
         bool SaveFile(const wxString &file);
         bool Modified();
+        void OnStyleNeeded(wxStyledTextEvent& event);
+        void HighlightSyntax(size_t From, size_t To, wxString &Text);
 
     protected:
 

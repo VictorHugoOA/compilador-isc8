@@ -17,6 +17,8 @@ class CompilerPhases: public wxNotebook
         CompilerPhases(wxWindow *parent, wxWindowID id = wxID_ANY, const wxPoint &pos = wxDefaultPosition, const wxSize &size = wxDefaultSize);
         virtual ~CompilerPhases();
 
+        void SetText(wxString& Text, int Phase);
+
     protected:
 
     private:

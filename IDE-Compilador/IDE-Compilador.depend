@@ -1805,7 +1805,7 @@
 	"wx/list.h"
 	"wx/dynarray.h"
 
-1618088589 source:d:\data\documentos\github\compilador-isc8\ide-compilador\ide_compiladormain.cpp
+1618330530 source:d:\data\documentos\github\compilador-isc8\ide-compilador\ide_compiladormain.cpp
 	"IDE_CompiladorMain.h"
 	<wx/msgdlg.h>
 	<wx/intl.h>
@@ -2270,7 +2270,7 @@
 	"prefs.h"
 	<wx/dialog.h>
 
-1617834056 source:d:\data\documentos\github\compilador-isc8\ide-compilador\src\editortext.cpp
+1618093705 source:d:\data\documentos\github\compilador-isc8\ide-compilador\src\editortext.cpp
 	"EditorText.h"
 	"prefs.h"
 	<wx/wx.h>
@@ -2280,7 +2280,7 @@
 1613691452 d:\data\documentos\github\compilador-isc8\ide-compilador\include\prefs.h
 	<wx/stc/stc.h>
 
-1618082948 source:d:\data\documentos\github\compilador-isc8\ide-compilador\src\prefs.cpp
+1618330478 source:d:\data\documentos\github\compilador-isc8\ide-compilador\src\prefs.cpp
 	"prefs.h"
 
 1587560968 c:\librerias\wxwidgets\include\wx\wx.h
@@ -3232,11 +3232,11 @@
 	<wx/notebook.h>
 	<wx/panel.h>
 
-1613691165 source:d:\data\documentos\github\compilador-isc8\ide-compilador\src\compilerphases.cpp
+1618102350 source:d:\data\documentos\github\compilador-isc8\ide-compilador\src\compilerphases.cpp
 	"CompilerPhases.h"
 	"EditorText.h"
 
-1613690931 d:\data\documentos\github\compilador-isc8\ide-compilador\include\compilerphases.h
+1618102234 d:\data\documentos\github\compilador-isc8\ide-compilador\include\compilerphases.h
 	<wx/notebook.h>
 
 1587560968 c:\librerias\wxwidgets\include\wx\process.h

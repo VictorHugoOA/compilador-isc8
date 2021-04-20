@@ -750,3 +750,37 @@ EditProperties::EditProperties (EditorText *edit,
 
     ShowModal();
 }
+
+void EditorText::OnStyleNeeded(wxStyledTextEvent& event){
+    size_t line_end = this->LineFromPosition(this->GetCurrentPos());
+    size_t line_start = this->LineFromPosition(this->GetEndStyled());
+
+    if(line_start > 1)
+        line_start -= 2;
+    else
+        line_start = 0;
+
+    if(this->GetLineCount() == this->LinesOnScreen()){
+        line_start = 0;
+        line_end = this->GetLineCount();
+    }
+
+    if(line_end < line_start){
+        size_t temp = line_end;
+        line_end = line_start;
+        line_start = temp;
+    }
+
+    if(line_end < this->GetLineCount()-1)
+        line_end++;
+
+    size_t startpos = this->PositionFromLine(line_start);
+    size_t endpos = this->GetLineEndPosition(line_end);
+    int startfoldlevel = this->GetFoldLevel(line_start);
+    startfoldlevel &= wxSTC_FOLDFLAG_LEVELNUMBERS;
+    wxString text = this->GetTextRange(startpos, endpos, text);
+
+    HighlightSyntax(startpos, endpos, text);
+
+
+}

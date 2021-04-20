@@ -21,8 +21,8 @@ mod compiler{
     
     #[derive(Debug)]
     pub struct Token{
-        token: TokenType,
-        lexema: String
+        pub token: TokenType,
+        pub lexema: String
     }
 
     pub mod Scanner{
@@ -117,10 +117,6 @@ mod compiler{
                 done = false;
                 state = StateType::ST_START;
                 while !done {
-
-                    // println!("{}", exit_loop);
-                    // println!("{}", done);
-                    // println!("{:?}", state);
 
                     if current_char == (file.len() - 1) {
                         token.token = TokenType::TK_EOF;
@@ -357,6 +353,8 @@ fn main() {
     let contents = fs::read_to_string(&args[1]).expect("Lo siento, no pudimos abrir el archivo o no se encuentra");
     let vector_chars: Vec<char> = contents.chars().collect();
     let token_vector = Scanner::get_tokens(&vector_chars);
-
-    println!("{:?}", Scanner::get_tokens(&vector_chars));
+    
+    for token in &token_vector{
+        println!("({:?},{})", token.token, token.lexema);
+    }
 }

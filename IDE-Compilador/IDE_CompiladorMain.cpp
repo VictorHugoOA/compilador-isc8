@@ -19,7 +19,7 @@
 #include "CompilerPhases.h"
 #include <stdlib.h>
 
-#define LEXIC_PATH "D:\\data\\Documentos\\GitHub\\compilador-isc8\\lexic-analyzer\\target\\release\\lexic_analyzer.exe "
+#define LEXIC_PATH "lexic-analyzer.exe "
 
 //helper functions
 enum wxbuildinfoformat {
@@ -330,34 +330,25 @@ void IDE_CompiladorFrame::FileOpen (wxString fname)
 void IDE_CompiladorFrame::OnCompile(wxCommandEvent& event){
     wxMessageBox(editor->GetFilename(), _("Archivo de compilación"));
 
-    //wxString Command(wxT(LEXIC_PATH));
-    //Command.Append(editor->GetFilename());
+    wxString Command(wxT(LEXIC_PATH));
+    Command.Append(editor->GetFilename());
 
-    wxString Command(wxT("cd"));
+    wxArrayString Output, Errors;
+    wxArrayString Tokens;
 
-    wxString Output;
+    wxString Out;
 
-    wxProcess* Proc = wxProcess::Open(Command);
-    if(!Proc){
-        wxLogError(wxT("Failed to launch the command"));
-        return;
+    long Code = wxExecute(Command, Output, Errors);
+
+    size_t CountOutput = Output.GetCount();
+    wxString Token;
+    for(int i = 0; i < CountOutput; ++i){
+        //wxMessageBox(Output[i], "Linea");
+        Out.Append(Output[i]);
+        if(Output[i][Output[i].Length()-1] == ')')
+            Out.Append('\n');
     }
-
-    wxInputStream* InputCommand = Proc->GetInputStream();
-
-    if(!InputCommand){
-        wxLogError(wxT("Failed to connect to child stdout"));
-        return;
-    }
-
-    while(InputCommand->CanRead()){
-        char Buffer[4096];
-        Buffer[InputCommand->Read(Buffer, WXSIZEOF(Buffer) - 1).LastRead()] = '\0';
-        Output.Append(Buffer);
-    }
-
-    wxMessageBox(Output, "Mensaje de salida");
-
+    phases->SetText(Out, LEXER_PHASE);
 }
 
 IDE_CompiladorFrame::~IDE_CompiladorFrame()

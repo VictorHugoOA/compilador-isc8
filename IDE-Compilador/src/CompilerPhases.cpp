@@ -15,6 +15,12 @@ CompilerPhases::CompilerPhases(wxWindow *parent, wxWindowID id, const wxPoint &p
 
 }
 
+void CompilerPhases::SetText(wxString &Text, int Phase){
+    phases[Phase]->SetReadOnly(false);
+    phases[Phase]->SetText(Text);
+    phases[Phase]->SetReadOnly(true);
+}
+
 CompilerPhases::~CompilerPhases()
 {
     //dtor
