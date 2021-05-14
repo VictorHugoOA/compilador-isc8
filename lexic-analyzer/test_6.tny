@@ -1,0 +1,4 @@
+program{
+	foo = 3+4+5*8;
+	bar = foo + 3;
+}

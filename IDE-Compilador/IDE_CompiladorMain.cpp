@@ -342,7 +342,7 @@ void IDE_CompiladorFrame::OnCompile(wxCommandEvent& event){
 
     size_t CountOutput = Output.GetCount();
     wxString Token;
-    for(int i = 0; i < CountOutput; ++i){
+    for(size_t i = 0; i < CountOutput; ++i){
         //wxMessageBox(Output[i], "Linea");
         Out.Append(Output[i]);
         if(Output[i][Output[i].Length()-1] == ')')

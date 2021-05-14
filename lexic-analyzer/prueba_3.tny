@@ -1,0 +1,10 @@
+program {
+	int x, y;
+	y = 0; // Comentario 1
+	y = 4 /* Comentario 2 */
+	do {
+		if(x<y){
+			y = y -1;
+		} fi
+	} until (y >= 0);
+}

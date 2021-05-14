@@ -1,0 +1,73 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_OUTPUT_EXCMD	mixed	/number, pattern, mixed, or combineV2/
+!_TAG_OUTPUT_FILESEP	slash	/slash or backslash/
+!_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
+!_TAG_PATTERN_LENGTH_LIMIT	96	/0 for no limit/
+!_TAG_PROC_CWD	/home/olivetti/src/proyectos/compiladores/compilador-isc8/lexic-analyzer/	//
+!_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
+!_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
+!_TAG_PROGRAM_URL	https://ctags.io/	/official site/
+!_TAG_PROGRAM_VERSION	5.9.0	/p5.9.20210110.0/
+ST_ADD	src/main.rs	/^            ST_START, ST_ID, ST_NUM, ST_COMMENT, ST_SEMICOLON, ST_COMMA, ST_ASSIGN, ST_ADD, ST_M/;"	e	enum:compiler::Scanner::StateType
+ST_ASSIGN	src/main.rs	/^            ST_START, ST_ID, ST_NUM, ST_COMMENT, ST_SEMICOLON, ST_COMMA, ST_ASSIGN, ST_ADD, ST_M/;"	e	enum:compiler::Scanner::StateType
+ST_COMMA	src/main.rs	/^            ST_START, ST_ID, ST_NUM, ST_COMMENT, ST_SEMICOLON, ST_COMMA, ST_ASSIGN, ST_ADD, ST_M/;"	e	enum:compiler::Scanner::StateType
+ST_COMMENT	src/main.rs	/^            ST_START, ST_ID, ST_NUM, ST_COMMENT, ST_SEMICOLON, ST_COMMA, ST_ASSIGN, ST_ADD, ST_M/;"	e	enum:compiler::Scanner::StateType
+ST_DONE	src/main.rs	/^            ST_START, ST_ID, ST_NUM, ST_COMMENT, ST_SEMICOLON, ST_COMMA, ST_ASSIGN, ST_ADD, ST_M/;"	e	enum:compiler::Scanner::StateType
+ST_EOF	src/main.rs	/^            ST_START, ST_ID, ST_NUM, ST_COMMENT, ST_SEMICOLON, ST_COMMA, ST_ASSIGN, ST_ADD, ST_M/;"	e	enum:compiler::Scanner::StateType
+ST_ERROR	src/main.rs	/^            ST_START, ST_ID, ST_NUM, ST_COMMENT, ST_SEMICOLON, ST_COMMA, ST_ASSIGN, ST_ADD, ST_M/;"	e	enum:compiler::Scanner::StateType
+ST_ID	src/main.rs	/^            ST_START, ST_ID, ST_NUM, ST_COMMENT, ST_SEMICOLON, ST_COMMA, ST_ASSIGN, ST_ADD, ST_M/;"	e	enum:compiler::Scanner::StateType
+ST_MINUS	src/main.rs	/^            ST_START, ST_ID, ST_NUM, ST_COMMENT, ST_SEMICOLON, ST_COMMA, ST_ASSIGN, ST_ADD, ST_M/;"	e	enum:compiler::Scanner::StateType
+ST_NUM	src/main.rs	/^            ST_START, ST_ID, ST_NUM, ST_COMMENT, ST_SEMICOLON, ST_COMMA, ST_ASSIGN, ST_ADD, ST_M/;"	e	enum:compiler::Scanner::StateType
+ST_SEMICOLON	src/main.rs	/^            ST_START, ST_ID, ST_NUM, ST_COMMENT, ST_SEMICOLON, ST_COMMA, ST_ASSIGN, ST_ADD, ST_M/;"	e	enum:compiler::Scanner::StateType
+ST_START	src/main.rs	/^            ST_START, ST_ID, ST_NUM, ST_COMMENT, ST_SEMICOLON, ST_COMMA, ST_ASSIGN, ST_ADD, ST_M/;"	e	enum:compiler::Scanner::StateType
+Scanner	src/main.rs	/^    pub mod Scanner{$/;"	n	module:compiler
+StateType	src/main.rs	/^        enum StateType{$/;"	g	module:compiler::Scanner
+TK_AND	src/main.rs	/^        TK_NOT, TK_AND, TK_OR$/;"	e	enum:compiler::TokenType
+TK_ASSIGN	src/main.rs	/^        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC,/;"	e	enum:compiler::TokenType
+TK_ASTERISC	src/main.rs	/^        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC,/;"	e	enum:compiler::TokenType
+TK_BEGIN	src/main.rs	/^        TK_BEGIN, TK_END, TK_COMMENT,$/;"	e	enum:compiler::TokenType
+TK_BOOL	src/main.rs	/^        TK_ID, TK_NUM, TK_INT, TK_FLOAT, TK_BOOL,$/;"	e	enum:compiler::TokenType
+TK_COMMA	src/main.rs	/^        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC,/;"	e	enum:compiler::TokenType
+TK_COMMENT	src/main.rs	/^        TK_BEGIN, TK_END, TK_COMMENT,$/;"	e	enum:compiler::TokenType
+TK_DIF	src/main.rs	/^        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC,/;"	e	enum:compiler::TokenType
+TK_DO	src/main.rs	/^        TK_PROG, TK_IF, TK_ELSE, TK_FI, TK_DO, TK_UNITL, TK_WHILE,$/;"	e	enum:compiler::TokenType
+TK_ELSE	src/main.rs	/^        TK_PROG, TK_IF, TK_ELSE, TK_FI, TK_DO, TK_UNITL, TK_WHILE,$/;"	e	enum:compiler::TokenType
+TK_END	src/main.rs	/^        TK_BEGIN, TK_END, TK_COMMENT,$/;"	e	enum:compiler::TokenType
+TK_EOF	src/main.rs	/^        TK_EOF, TK_ERROR,$/;"	e	enum:compiler::TokenType
+TK_EQ	src/main.rs	/^        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC,/;"	e	enum:compiler::TokenType
+TK_ERROR	src/main.rs	/^        TK_EOF, TK_ERROR,$/;"	e	enum:compiler::TokenType
+TK_EXP	src/main.rs	/^        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC,/;"	e	enum:compiler::TokenType
+TK_FI	src/main.rs	/^        TK_PROG, TK_IF, TK_ELSE, TK_FI, TK_DO, TK_UNITL, TK_WHILE,$/;"	e	enum:compiler::TokenType
+TK_FLOAT	src/main.rs	/^        TK_ID, TK_NUM, TK_INT, TK_FLOAT, TK_BOOL,$/;"	e	enum:compiler::TokenType
+TK_GT	src/main.rs	/^        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC,/;"	e	enum:compiler::TokenType
+TK_GTE	src/main.rs	/^        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC,/;"	e	enum:compiler::TokenType
+TK_ID	src/main.rs	/^        TK_ID, TK_NUM, TK_INT, TK_FLOAT, TK_BOOL,$/;"	e	enum:compiler::TokenType
+TK_IF	src/main.rs	/^        TK_PROG, TK_IF, TK_ELSE, TK_FI, TK_DO, TK_UNITL, TK_WHILE,$/;"	e	enum:compiler::TokenType
+TK_INT	src/main.rs	/^        TK_ID, TK_NUM, TK_INT, TK_FLOAT, TK_BOOL,$/;"	e	enum:compiler::TokenType
+TK_LPAREN	src/main.rs	/^        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC,/;"	e	enum:compiler::TokenType
+TK_LT	src/main.rs	/^        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC,/;"	e	enum:compiler::TokenType
+TK_LTE	src/main.rs	/^        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC,/;"	e	enum:compiler::TokenType
+TK_MINUS	src/main.rs	/^        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC,/;"	e	enum:compiler::TokenType
+TK_NOT	src/main.rs	/^        TK_NOT, TK_AND, TK_OR$/;"	e	enum:compiler::TokenType
+TK_NUM	src/main.rs	/^        TK_ID, TK_NUM, TK_INT, TK_FLOAT, TK_BOOL,$/;"	e	enum:compiler::TokenType
+TK_OR	src/main.rs	/^        TK_NOT, TK_AND, TK_OR$/;"	e	enum:compiler::TokenType
+TK_PLUS	src/main.rs	/^        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC,/;"	e	enum:compiler::TokenType
+TK_PROG	src/main.rs	/^        TK_PROG, TK_IF, TK_ELSE, TK_FI, TK_DO, TK_UNITL, TK_WHILE,$/;"	e	enum:compiler::TokenType
+TK_READ	src/main.rs	/^        TK_READ, TK_WRITE,$/;"	e	enum:compiler::TokenType
+TK_RPAREN	src/main.rs	/^        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC,/;"	e	enum:compiler::TokenType
+TK_SEMICOLON	src/main.rs	/^        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC,/;"	e	enum:compiler::TokenType
+TK_SLASH	src/main.rs	/^        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_ASTERISC,/;"	e	enum:compiler::TokenType
+TK_UNITL	src/main.rs	/^        TK_PROG, TK_IF, TK_ELSE, TK_FI, TK_DO, TK_UNITL, TK_WHILE,$/;"	e	enum:compiler::TokenType
+TK_WHILE	src/main.rs	/^        TK_PROG, TK_IF, TK_ELSE, TK_FI, TK_DO, TK_UNITL, TK_WHILE,$/;"	e	enum:compiler::TokenType
+TK_WRITE	src/main.rs	/^        TK_READ, TK_WRITE,$/;"	e	enum:compiler::TokenType
+Token	src/main.rs	/^    pub struct Token{$/;"	s	module:compiler
+TokenType	src/main.rs	/^    pub enum TokenType{$/;"	g	module:compiler
+compiler	src/main.rs	/^mod compiler{$/;"	n
+get_tokens	src/main.rs	/^        pub fn get_tokens(file: &Vec<char>) -> Vec<Token>{$/;"	f	module:compiler::Scanner
+is_delimiter	src/main.rs	/^        fn is_delimiter (c: char) -> bool{$/;"	f	module:compiler::Scanner
+is_reserved_word	src/main.rs	/^        fn is_reserved_word(lexema: &str) -> TokenType{$/;"	f	module:compiler::Scanner
+lexema	src/main.rs	/^        pub lexema: String$/;"	m	struct:compiler::Token
+main	src/main.rs	/^fn main() {$/;"	f
+syntax_analyzer	src/main.rs	/^        pub fn syntax_analyzer(tokens: &Vec<Token>){$/;"	f	module:compiler::Scanner
+token	src/main.rs	/^        pub token: TokenType,$/;"	m	struct:compiler::Token
