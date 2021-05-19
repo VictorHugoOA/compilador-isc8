@@ -15,7 +15,7 @@ mod compiler{
         //Tokens para casos especiales
         TK_EOF, TK_ERROR,
         //Tokens para flujo de operaciones
-        TK_PROG, TK_IF, TK_ELSE, TK_FI, TK_DO, TK_UNITL, TK_WHILE,
+        TK_PROG, TK_IF, TK_ELSE, TK_FI, TK_DO, TK_UNTIL, TK_WHILE, TK_THEN,
         //Tokes para operaciones lógicas
         TK_NOT, TK_AND, TK_OR,
         NoToken
@@ -23,7 +23,7 @@ mod compiler{
 
     #[derive(Copy, Clone, PartialEq, Eq)]
     pub enum StatementType{
-        Sequence = 1, Program, Literal, Binary, Arithmetic, Relational, Variable, Read, NoType, Assignment, Begin, End
+        Sequence = 1, Program, Literal, Binary, Arithmetic, Relational, Variable, Read, NoType, Assignment, Begin, End, If, Repeat, While
     }
 
     #[derive(Copy, Clone)]
@@ -75,22 +75,47 @@ mod compiler{
         return result;
     }
 
-    pub fn new_begin(token: &Token)-> TreeNode{
-        let result = TreeNode {token: token.copy_token(), is_expression: false, is_lvalue: false, nodes: vec![], statement_type: StatementType::Begin, val_type: TinyType::NoType};
+    pub fn new_if(token: &Token, condition: &TreeNode, selection: &TreeNode, otherwise: &TreeNode) -> TreeNode{
+        let result = TreeNode {
+            token: token.copy_token(),
+            is_expression: false,
+            is_lvalue: false,
+            nodes: vec![condition.copy(), selection.copy(), otherwise.copy()],
+            statement_type: StatementType::If, 
+            val_type: TinyType::NoType
+        };
         return result;
     }
 
-    pub fn new_end(token: &Token)-> TreeNode{
-        let result = TreeNode {token: token.copy_token(), is_expression: false, is_lvalue: false, nodes: vec![], statement_type: StatementType::End, val_type: TinyType::NoType};
+    pub fn new_repeat(token: &Token, condition: &TreeNode, selection: &TreeNode) -> TreeNode {
+        let result = TreeNode {
+            token: token.copy_token(),
+            is_expression: false,
+            is_lvalue: false,
+            nodes: vec![condition.copy(), selection.copy()],
+            statement_type: StatementType::Repeat,
+            val_type: TinyType::NoType
+        };
         return result;
     }
 
-    pub fn new_program(token: &Token, begin: &TreeNode, program: &TreeNode)-> TreeNode{
+    pub fn new_while(token: &Token, condition: &TreeNode, selection: &TreeNode) -> TreeNode {
+        let result = TreeNode {
+            token: token.copy_token(),
+            is_expression: false,
+            is_lvalue: false,
+            nodes: vec![condition.copy(), selection.copy()],
+            statement_type: StatementType::While,
+            val_type: TinyType::NoType
+        };
+        return result;
+    }
+
+    pub fn new_program(token: &Token, program: &TreeNode)-> TreeNode{
         let result = TreeNode{token: token.copy_token(),
         is_expression: false,
         is_lvalue: false,
-        nodes: vec![begin.copy(),
-        program.copy()],
+        nodes: vec![program.copy()],
         statement_type: StatementType::Program,
         val_type: TinyType::NoType};
         return result;
@@ -152,10 +177,346 @@ mod compiler{
         }
     }
    
+    pub fn null_token() -> Token {
+        let result = Token {
+            token: TokenType::NoToken,
+            lexema: String::from(""),
+            line: 0
+        };
+        return result;
+    }
     impl Token{
         pub fn copy_token(&self) -> Token{
             let new_token: Token = Token { token: self.token, lexema: self.lexema.clone(), line: self.line };
             return new_token;
+        }
+    }
+
+    pub mod scanner{
+        use super::TokenType;
+        use super::Token;
+        use std::fs;
+        use std::io::BufReader;
+        use std::io::prelude::*;
+        
+        //Son los estados de la máquina para el autómata
+        #[derive(Debug, PartialEq, Eq)]
+        enum StateType{
+            Start = 1, Id, Num, CommentLine, CommentBlock, Error, IsDone
+        }
+        pub struct Scanner{
+            file_name: String,
+            file_buffer: BufReader<fs::File>,
+            current_pos: usize,
+            current_line: u32,
+            _trace: bool,
+            _echo_source: bool,
+            initialized: bool,
+            line_buff: Vec<char>,
+            in_eof: bool
+        }
+        impl Scanner{
+            pub fn set_echo_source(&mut self, x: bool){
+                self._echo_source = x;
+            }
+            pub fn echo_source(&self) -> bool{
+                self._echo_source
+            }
+            pub fn set_trace(&mut self, x: bool){
+                self._trace = x;
+            }
+            pub fn trace(&self) -> bool{
+                self._trace
+            }
+
+            pub fn get_line(&self) -> u32{
+                self.current_line
+            }
+
+            pub fn get_pos(&self) -> usize{
+                self.current_pos
+            }
+
+            fn get_next_char(&mut self) -> char{
+                let mut buf = String::new();
+                let zero_bytes: usize = 0;
+                if self.current_pos >= self.line_buff.len() {
+                    let num_bytes = self.file_buffer.read_line(&mut buf).expect("Couldn't read file'");
+                    if num_bytes > zero_bytes {
+                        self.line_buff = buf.chars().collect();
+                        self.current_pos = 0;
+                        self.current_line += 1;
+                    }
+                    else{
+                        self.in_eof = true;
+                        return '\0';
+                    }
+                }
+                let result = self.line_buff[self.current_pos];
+                self.current_pos += 1;
+                return result;
+            }
+            fn unget_next_char(&mut self){
+                if !self.in_eof {
+                    self.current_pos -= 1;
+                }
+            }
+            
+            pub fn new(file_name: &str, token_trace: bool) -> Scanner{
+
+                let file = fs::File::open(file_name).expect("Please, to use the program use lexic-analyzer <filename>");
+                let buf_reader = BufReader::new(file);
+
+                let result = Scanner {
+                    file_name: String::from(file_name),
+                    _trace: token_trace,
+                    current_line: 0,
+                    current_pos: 0,
+                    _echo_source: false,
+                    file_buffer: buf_reader,
+                    initialized: false,
+                    line_buff: vec![],
+                    in_eof: false
+                };
+                return result;
+            }
+
+            fn is_delimiter (&self, c: char) -> bool{
+                c == ' ' || c == '\t' || c == '\n'
+            }
+
+            fn is_reserved_word(&mut self, lexema: &str)-> TokenType{
+               match lexema {
+                   "program" => {
+                       return TokenType::TK_PROG
+                   }
+                   "if" => {
+                       return TokenType::TK_IF
+                   }
+                   "fi" => {
+                       return TokenType::TK_FI
+                   }
+                   "else" => {
+                       return TokenType::TK_ELSE
+                   }
+                   "do" => {
+                       return TokenType::TK_DO
+                   }
+                   "until" => {
+                       return TokenType::TK_UNTIL
+                   }
+                   "while" => {
+                       return TokenType::TK_WHILE
+                   }
+                   "read" => {
+                       return TokenType::TK_READ
+                   }
+                   "write" => {
+                       return TokenType::TK_WRITE
+                   }
+                   "float" => {
+                       return TokenType::TK_FLOAT
+                   }
+                   "int" => {
+                       return TokenType::TK_INT
+                   }
+                   "bool" => {
+                       return TokenType::TK_BOOL
+                   }
+                   "not" => {
+                       return TokenType::TK_NOT
+                   }
+                   "and" => {
+                       return TokenType::TK_AND
+                   }
+                   "or" => {
+                       return TokenType::TK_OR
+                   }
+                   "then" => {
+                       return TokenType::TK_THEN
+                   }
+                   _ => {
+                       return TokenType::TK_ID
+                   }
+               }
+            }
+
+            pub fn get_token(&mut self) -> Token{
+
+                let mut lexema: String = String::new();
+                let mut token: TokenType = TokenType::TK_ERROR;
+                let mut start_line: u32 = 0;
+
+                let mut state: StateType = StateType::Start;
+                while state != StateType::IsDone {
+                    let mut c: char = self.get_next_char();
+                    let mut save: bool = true;
+                    match state {
+                        StateType::Start => {
+                            start_line = self.get_line();
+                            if self.in_eof {
+                                state = StateType::IsDone;
+                                token = TokenType::TK_EOF;
+                            }
+                            else if c.is_digit(10) {
+                                state = StateType::Num;
+                            }
+                            else if c.is_alphabetic() || c == '_' {
+                                state = StateType::Id;
+                            }
+                            else if self.is_delimiter(c) {
+                                save = false;
+                            }
+                            else if c == '(' {
+                                state = StateType::IsDone;
+                                token = TokenType::TK_LPAREN;
+                            }
+                            else if c == ')' {
+                                state = StateType::IsDone;
+                                token = TokenType::TK_RPAREN;
+                            }
+                            else if c == '{' {
+                                state = StateType::IsDone;
+                                token = TokenType::TK_LKEY;
+                            }
+                            else if c == '}' {
+                                state = StateType::IsDone;
+                                token = TokenType::TK_RKEY;
+                            }
+                            else if c == ';' {
+                                state = StateType::IsDone;
+                                token = TokenType::TK_SEMICOLON;
+                            }
+                            else if c == ',' {
+                                token = TokenType::TK_COMMA;
+                                state = StateType::IsDone;
+                            }
+                            else if c == '+' {
+                                token = TokenType::TK_PLUS;
+                                state = StateType::IsDone;
+                            }
+                            else if c == '-' {
+                                token = TokenType::TK_MINUS;
+                                state = StateType::IsDone;
+                            }
+                            else if c == '*' {
+                                token = TokenType::TK_TIMES;
+                                state = StateType::IsDone;
+                            }
+                            else if c == '/' {
+                                token = TokenType::TK_OVER;
+                                state = StateType::IsDone;
+                                let tempC: char = self.get_next_char();
+                                if tempC == '/' {
+                                    state = StateType::CommentLine;
+                                    token = TokenType::TK_COMMENT_LINE;
+                                    save = false
+                                }
+                                else if tempC == '*'{
+                                    state = StateType::CommentBlock;
+                                    token = TokenType::TK_COMMENT_BLOCK;
+                                    save = false;
+                                }
+                                else{
+                                    self.unget_next_char();
+                                }
+                            }
+                            else if c == '^' {
+                                token = TokenType::TK_EXP;
+                                state = StateType::IsDone;
+                            }
+                            else if c == '=' {
+                                token = TokenType::TK_ASSIGN;
+                                state = StateType::IsDone;
+                                let tempC: char = self.get_next_char();
+                                if tempC == '='{
+                                    lexema.push(c);
+                                    c = tempC;
+                                    token = TokenType::TK_EQ;
+                                }
+                                else {
+                                    self.unget_next_char();
+                                }
+                            }
+                            else if c == '<' {
+                                token = TokenType::TK_LT;
+                                state = StateType::IsDone;
+
+                                let tempC: char = self.get_next_char();
+                                if tempC == '=' {
+                                    lexema.push(c);
+                                    c = tempC;
+                                    token = TokenType::TK_LTE;
+                                }
+                                else {
+                                    self.unget_next_char();
+                                }
+
+                            }
+                            else if c == '>' {
+                                token = TokenType::TK_GT;
+                                state = StateType::IsDone;
+                                let tempC: char = self.get_next_char();
+                                if tempC == '=' {
+                                    lexema.push(c);
+                                    c = tempC;
+                                    token = TokenType::TK_GTE;
+                                }
+                                else {
+                                    self.unget_next_char();
+                                }
+                            }
+                            else if c == '!' {
+                                token = TokenType::TK_ERROR;
+                                state = StateType::IsDone;
+                                let tempC: char = self.get_next_char();
+                                if tempC == '=' {
+                                    lexema.push(c);
+                                    c = tempC;
+                                    token = TokenType::TK_DIF;
+                                }
+                                else {
+                                    self.unget_next_char();
+                                }
+                            }
+                        }
+                        StateType::Num => {
+                            if !c.is_digit(10) {
+                                self.unget_next_char();
+                                state = StateType::IsDone;
+                                save = false;
+                                token = TokenType::TK_NUM;
+                            }
+                        }
+                        StateType::Id => {
+                            if !(c.is_alphanumeric() || c == '_') {
+                                self.unget_next_char();
+                                state = StateType::IsDone;
+                                save = false;
+                                token = TokenType::TK_ID;
+                            }
+                        }
+                        StateType::IsDone => {
+                        }
+                        _ => {
+                        }
+                    }
+
+                    if save {
+                        lexema.push(c);
+                    }
+                    if state == StateType::IsDone {
+                        if token == TokenType::TK_ID {
+                            token = self.is_reserved_word(&lexema);
+                        }
+                    }
+                }
+                let result_token = Token {token: token, lexema: String::from(lexema), line: start_line};
+                if(self._trace){
+                    println!("({:?},{}, {})", result_token.token, result_token.lexema, result_token.line);
+                }
+                return result_token;
+            }
         }
     }
 
@@ -164,29 +525,43 @@ mod compiler{
         use super::TokenType;
         use super::TreeNode;
         use super::StatementType;
-        use super::{null_tree, new_var, new_literal, new_arithmetic, new_relational, new_assignment, new_program, new_sequence, new_begin, new_end};
+        use super::{null_tree, new_var, new_literal, new_arithmetic, new_relational, new_assignment, new_program, new_sequence, new_if, new_repeat, new_while, null_token};
+        use super::scanner::Scanner;
 
         pub struct TokenParser{
             current_token: Token,
             program: TreeNode,
-            list_tokens: Vec<Token>,
-            next_token: usize
+            scanner: Scanner,
+            _error: bool
+
         }
-        pub fn new(token_list: &Vec<Token>) -> TokenParser{
-            return TokenParser {current_token: token_list[0].copy_token(), program: null_tree(), list_tokens: token_list.to_vec(), next_token: 0};
+        pub fn new(scanner: Scanner) -> TokenParser{
+            return TokenParser {current_token: null_token(), program: null_tree(), scanner: scanner, _error: false };
         }
         impl TokenParser{
+
+            fn error_msg(&mut self, label: &str, token: &Token, msg: &str){
+                eprintln!("error: line - {} error: {}, msg: {}", token.line, label, msg);
+                self._error = true;
+            }
+
+            fn type_error(&mut self, token: &Token, msg: &str){
+                self.error_msg("type", token, msg);
+            }
+
+            fn syntax_error(&mut self, token: &Token, msg: &str){
+                self.error_msg("syntax", token, msg);
+            }
+
             pub fn parse(&mut self)-> &TreeNode{
+                self.current_token = self.get_next_token();
                 let program: Token = self.current_token.copy_token();
                 self.match_token(&TokenType::TK_PROG);
-                let lkey: Token = self.current_token.copy_token();
                 self.match_token(&TokenType::TK_LKEY);
-                self.program = new_program(&program, &new_begin(&lkey), &self.seq_stmt());
-                let rkey: Token = self.current_token.copy_token();
+                self.program = new_program(&program, &self.seq_stmt());
                 self.match_token(&TokenType::TK_RKEY);
-                self.program.append(&new_end(&rkey));
                 if self.current_token.token != TokenType::TK_EOF {
-                    panic!("Error in file");
+                    self.syntax_error(&self.current_token.copy_token(), "Code ends before file");
                 }
 
                 return &self.program;
@@ -198,14 +573,12 @@ mod compiler{
                     self.current_token = new_token;
                 }
                 else{
-                    panic!("Error");
+                    self.syntax_error(&self.current_token.copy_token(), "unexpected token");
                 }
             }
 
             fn get_next_token(&mut self) -> Token{
-                self.next_token += 1;
-                let result = self.list_tokens[self.next_token].copy_token();
-                return result;
+                return self.scanner.get_token();
             }
 
             pub fn print_parser(&self){
@@ -214,9 +587,8 @@ mod compiler{
 
             fn seq_stmt(&mut self) -> TreeNode{
                 let mut retval: TreeNode = new_sequence(&self.stmt());
-                while self.current_token.token != TokenType::TK_EOF || self.current_token.token != TokenType::TK_RKEY ||
-                    self.current_token.token != TokenType::TK_ELSE || self.current_token.token != TokenType::TK_UNITL {
-                        self.match_token(&TokenType::TK_SEMICOLON);
+                while (self.current_token.token != TokenType::TK_EOF) && (self.current_token.token != TokenType::TK_RKEY) &&
+                    (self.current_token.token != TokenType::TK_ELSE) && (self.current_token.token != TokenType::TK_UNTIL) {
                         let q: TreeNode = self.stmt();
                         if q.token.token != TokenType::NoToken && q.statement_type != StatementType::NoType {
                             retval.append(&q);
@@ -233,13 +605,79 @@ mod compiler{
                 match self.current_token.token {
                     TokenType::TK_ID => {
                         statement = self.assign_stmt();
+                        self.match_token(&TokenType::TK_SEMICOLON);
+                    }
+                    TokenType::TK_IF => {
+                        statement = self.if_stmt();
+                    }
+                    TokenType::TK_DO => {
+                        statement = self.repeat_stmt();
+                        self.match_token(&TokenType::TK_SEMICOLON);
+                    }
+                    TokenType::TK_WHILE => {
+                        statement = self.while_stmt();
                     }
                     _ => {
-                        
+                        self.current_token = self.get_next_token();
                     }
                 }
                 return statement;
             }
+
+            fn while_stmt(&mut self) -> TreeNode {
+                let while_token: Token = self.current_token.copy_token();
+                self.match_token(&TokenType::TK_WHILE);
+                self.match_token(&TokenType::TK_LPAREN);
+                let condition: TreeNode = self.expression();
+                self.match_token(&TokenType::TK_RPAREN);
+                self.match_token(&TokenType::TK_LKEY);
+                let selection: TreeNode = self.seq_stmt();
+                self.match_token(&TokenType::TK_RKEY);
+                
+                return new_while(&while_token, &condition, &selection);
+            }
+
+            fn if_stmt(&mut self) -> TreeNode{
+
+                let if_token: Token = self.current_token.copy_token();
+                self.match_token(&TokenType::TK_IF);
+
+                self.match_token(&TokenType::TK_LPAREN);
+                let condition: TreeNode = self.expression();
+                self.match_token(&TokenType::TK_RPAREN);
+
+                self.match_token(&TokenType::TK_THEN);
+
+                self.match_token(&TokenType::TK_LKEY);
+                let selection: TreeNode = self.seq_stmt();
+                self.match_token(&TokenType::TK_RKEY);
+                let mut otherwise: TreeNode = null_tree();
+
+                if self.current_token.token == TokenType::TK_ELSE {
+                    self.match_token(&TokenType::TK_ELSE);
+                    self.match_token(&TokenType::TK_LKEY);
+                    otherwise = self.seq_stmt();
+                    self.match_token(&TokenType::TK_RKEY);
+                }
+                self.match_token(&TokenType::TK_FI);
+                return new_if(&if_token, &condition, &selection, &otherwise);
+            }
+
+            fn repeat_stmt(&mut self) -> TreeNode {
+                let do_token: Token = self.current_token.copy_token();
+                self.match_token(&TokenType::TK_DO);
+                self.match_token(&TokenType::TK_LKEY);
+                let selection: TreeNode = self.seq_stmt();
+                self.match_token(&TokenType::TK_RKEY);
+                self.match_token(&TokenType::TK_UNTIL);
+                self.match_token(&TokenType::TK_LPAREN);
+                let condition: TreeNode = self.expression();
+                self.match_token(&TokenType::TK_RPAREN);
+                
+                return new_repeat(&do_token, &condition, &selection);
+
+            }
+
             fn assign_stmt(&mut self) -> TreeNode{
                 let mut variable: TreeNode = null_tree();
                 let _var: Token = self.current_token.copy_token();
@@ -307,349 +745,24 @@ mod compiler{
             }
         }
     }
-    pub mod Scanner{
-        use super::TokenType;
-        use super::Token;
-        //Son los estados de la máquina para el autómata
-        #[derive(Debug)]
-        enum StateType{
-            ST_START, ST_ID, ST_NUM, ST_COMMENT_LINE, ST_COMMENT_BLOCK, ST_ERROR, ST_DONE
-        }
-
-        fn is_delimiter (c: char) -> bool{
-            c == ' ' || c == '\t' || c == '\n'
-        }
-        fn is_reserved_word(lexema: &str) -> TokenType{
-           match lexema {
-               "program" => {
-                   return TokenType::TK_PROG
-               }
-
-               "if" => {
-                   return TokenType::TK_IF
-               }
-
-               "fi" => {
-                   return TokenType::TK_FI
-               }
-
-               "else" => {
-                   return TokenType::TK_ELSE
-               }
-
-               "do" => {
-                   return TokenType::TK_DO
-               }
-
-               "until" => {
-                   return TokenType::TK_UNITL
-               }
-
-               "while" => {
-                   return TokenType::TK_WHILE
-               }
-
-               "read" => {
-                   return TokenType::TK_READ
-               }
-
-               "write" => {
-                   return TokenType::TK_WRITE
-               }
-
-               "float" => {
-                   return TokenType::TK_FLOAT
-               }
-
-               "int" => {
-                   return TokenType::TK_INT
-               }
-
-               "bool" => {
-                   return TokenType::TK_BOOL
-               }
-
-               "not" => {
-                   return TokenType::TK_NOT
-               }
-
-               "and" => {
-                   return TokenType::TK_AND
-               }
-
-               "or" => {
-                   return TokenType::TK_OR
-               }
-
-               _ => {
-                   return TokenType::TK_ID
-               }
-           } 
-        }
-
-        fn get_next_char(line: &Vec<char>, current: usize) -> (char, bool){
-            if current >= line.len() {
-                return ('\0', false);
-            }
-            let result: (char, bool) = (line[current], true);
-            return result;
-        }
-
-        pub fn get_tokens(line: &Vec<char>, number_line: u32) -> Vec<Token>{
-
-            let mut c: char = '-';
-            let mut tokens: Vec<Token> = Vec::new();
-            let mut state: StateType = StateType::ST_START;
-            let mut current_char: usize = 0;
-            let mut done: bool = false;
-            let mut exit_loop: bool = false;
-
-            while !exit_loop {
-                let mut token: Token = Token{token: TokenType::TK_ERROR, lexema: String::from(""), line: number_line};
-                done = false;
-                state = StateType::ST_START;
-                if !get_next_char(line, current_char).1 {
-                    exit_loop = true;
-                    continue;
-                }
-                while !done {
-                    match state {
-                        StateType::ST_START => {
-
-                            c = get_next_char(line, current_char).0;
-                            current_char += 1;
-
-                            while is_delimiter(c) {
-                                let (character, end_of_line) = get_next_char(line, current_char);
-                                current_char += 1;
-                                c = character;
-                            }
-
-                            if c.is_alphabetic() {
-                                state = StateType::ST_ID;
-                                token.lexema.push(c);
-                            }
-                            else if c.is_numeric() {
-                                state = StateType::ST_NUM;
-                                token.lexema.push(c);
-                            }
-                            else if c == '(' {
-                                token.token = TokenType::TK_LPAREN;
-                                state = StateType::ST_DONE;
-                                token.lexema.push(c);
-                            }
-                            else if c == ')' {
-                                token.token = TokenType::TK_RPAREN;
-                                state = StateType::ST_DONE;
-                                token.lexema.push(c);
-                            }
-                            else if c == '{' {
-                                token.token = TokenType::TK_LKEY;
-                                state = StateType::ST_DONE;
-                                token.lexema.push(c);
-                            }
-                            else if c == '}' {
-                                token.token = TokenType::TK_RKEY;
-                                state = StateType::ST_DONE;
-                                token.lexema.push(c);
-                            }
-                            else if c == ';' {
-                                token.token = TokenType::TK_SEMICOLON;
-                                state = StateType::ST_DONE;
-                                token.lexema.push(c);
-                            }
-                            else if c == ',' {
-                                token.token = TokenType::TK_COMMA;
-                                state = StateType::ST_DONE;
-                                token.lexema.push(c);
-                            }
-                            else if c == '+' {
-                                token.token = TokenType::TK_PLUS;
-                                state = StateType::ST_DONE;
-                                token.lexema.push(c);
-                            }
-                            else if c == '-' {
-                                token.token = TokenType::TK_MINUS;
-                                state = StateType::ST_DONE;
-                                token.lexema.push(c);
-                            }
-                            else if c == '*'{
-                                token.token = TokenType::TK_TIMES;
-                                state = StateType::ST_DONE;
-                                token.lexema.push(c);
-                            }
-                            else if c == '/'{
-                                token.token = TokenType::TK_OVER;
-                                state = StateType::ST_DONE;
-                                token.lexema.push(c);
-                                c = get_next_char(line, current_char).0;
-                                current_char += 1;
-                                if c == '/' {
-                                    state = StateType::ST_COMMENT_LINE;
-                                    token.token = TokenType::TK_COMMENT_LINE;
-                                    token.lexema.push(c);
-                                }
-                                else if c == '*' {
-                                    state = StateType::ST_COMMENT_BLOCK;
-                                    token.token = TokenType::TK_COMMENT_BLOCK;
-                                    token.lexema.push(c);
-                                }
-                                else{
-                                    current_char -= 1;
-                                }
-                            }
-
-                            else if c == '^'{
-                                token.token = TokenType::TK_EXP;
-                                state = StateType::ST_DONE;
-                                token.lexema.push(c);
-                            }
-
-                            else if c == '='{
-                                token.lexema.push(c);
-                                token.token = TokenType::TK_ASSIGN;
-                                state = StateType::ST_DONE;
-                                c = get_next_char(line, current_char).0;
-                                current_char += 1;
-                                if(c == '='){
-                                    token.lexema.push(c);
-                                    token.token = TokenType::TK_EQ;
-                                }
-                                else{
-                                    current_char = current_char - 1;
-                                }
-                            }
-
-                            else if c == '<'{
-                                token.lexema.push(c);
-                                token.token = TokenType::TK_LT;
-                                state = StateType::ST_DONE;
-                                c = get_next_char(line, current_char).0;
-                                current_char += 1;
-                                if(c == '='){
-                                    token.lexema.push(c);
-                                    token.token = TokenType::TK_LTE;
-                                }
-                                else{
-                                    current_char = current_char - 1;
-                                }
-                            }
-
-                            else if c == '>'{
-                                token.token = TokenType::TK_GT;
-                                state = StateType::ST_DONE;
-                                token.lexema.push(c);
-                                c = get_next_char(line, current_char).0;
-                                current_char += 1;
-                                if(c == '='){
-                                    token.lexema.push(c);
-                                    token.token = TokenType::TK_GTE;
-                                }
-                                else{
-                                    current_char = current_char - 1;
-                                }
-                            }
-
-                            else if c == '!'{
-                                token.lexema.push(c);
-                                token.token = TokenType::TK_ERROR;
-                                state = StateType::ST_DONE;
-                                c = get_next_char(line, current_char).0;
-                                current_char += 1;
-                                if(c == '='){
-                                    token.lexema.push(c);
-                                    token.token = TokenType::TK_DIF;
-                                }
-                                else{
-                                    current_char = current_char - 1;
-                                }
-                            }
-                        }
-                        StateType::ST_NUM => {
-                            let (character, valid) = get_next_char(line, current_char);
-                            current_char += 1;
-                            c = character;
-                            token.lexema.push(c);
-                            if !c.is_digit(10) || !valid {
-                                token.token = TokenType::TK_NUM;
-                                state= StateType::ST_DONE;
-                                current_char -= 1;
-                                token.lexema.pop();
-                            }
-                        }
-                        StateType::ST_ID => {
-                            let (character, valid) = get_next_char(line, current_char);
-                            current_char += 1;
-                            c = character;
-                            token.lexema.push(c);
-                            if !(c.is_alphanumeric() || c == '_') {
-                                state = StateType::ST_DONE;
-                                token.token= TokenType::TK_ID;
-                                current_char = current_char - 1;
-                                token.lexema.pop();
-                                token.token = is_reserved_word(&token.lexema);
-                            }
-                        }
-                        StateType::ST_COMMENT_LINE => {
-                            let (character, valid) = get_next_char(line, current_char);
-                            current_char += 1;
-                            c = character;
-                            token.lexema.push(c);
-                            if !valid {
-                                state = StateType::ST_DONE;
-                            }
-                        }
-                        StateType::ST_COMMENT_BLOCK => {
-                            let (character, valid) = get_next_char(line, current_char);
-                            current_char += 1;
-                            c = character;
-                            token.lexema.push(c);
-                            if c == '*'{
-                                let (character, valid) = get_next_char(line, current_char);
-                                current_char += 1;
-                                c = character;
-                                token.lexema.push(c);
-                                if c == '/' {
-                                    state = StateType::ST_DONE;
-                                }
-                            }
-                            if !valid{
-                                state = StateType::ST_ERROR;
-                            }
-                        }
-                        StateType::ST_DONE => {
-                            done = true;
-                            continue;
-                        }
-                        _ =>{
-                            token.token = TokenType::TK_ERROR;
-                            state = StateType::ST_DONE;
-                            token.lexema.push(c);
-                        }
-                    }
-                }
-                // println!("{:?}", token);
-                tokens.push(token);
-            }
-            tokens
-        }
-    }
-
 }
 
-use crate::compiler::Scanner;
+// use crate::compiler::Scanner;
 use std::fs;
 use std::env;
 use std::io::BufReader;
 use std::io::prelude::*;
-use crate::compiler::Token;
+
+// use crate::compiler::Token;
 use crate::compiler::TokenType;
 use crate::compiler::parser;
+use crate::compiler::scanner;
+
 const ONLY_TOKENS:&str = "--only-tokens";
 const ONLY_GRAMAR:&str = "--only-gramar";
 
 fn main() {
-    let mut show_tokens = true;
+    let mut show_tokens = false;
     let mut show_gramar = true;
     let args: Vec<String> = env::args().collect();
     if args.iter().any(|s| ONLY_TOKENS == s){
@@ -660,34 +773,8 @@ fn main() {
         show_tokens = false;
         show_gramar = true;
     }
-    let file = fs::File::open(&args[args.len()-1]).expect("Please, to use the program use lexic-analyzer <filename>");
-
-    let mut buf_reader = BufReader::new(file);
-
-    let mut token_vector: Vec<Token> = Vec::new();
-
-    let mut number_line: u32 = 0;
-    for line in buf_reader.lines() {
-        let unwrapped_line = line.unwrap();
-        number_line += 1;
-        let vector_chars: Vec<char> = unwrapped_line.chars().collect();
-        let tokens = Scanner::get_tokens(&vector_chars, number_line);
-        for token in &tokens{
-            let copy_token = token.copy_token();
-            token_vector.push(copy_token);
-        }
-    }
-    number_line += 1;
-
-    let token_eof = Token { token: TokenType::TK_EOF, lexema: String::from(""), line: number_line };
-    token_vector.push(token_eof);
-
-    if show_tokens {
-        for token in &token_vector{
-            println!("({:?},{}, {})", token.token, token.lexema, token.line);
-        }
-    }
-    let mut parser: parser::TokenParser = parser::new(&token_vector);
+    let mut Scanner  = scanner::Scanner::new(&args[args.len()-1], false);
+    let mut parser: parser::TokenParser = parser::new(Scanner);
     parser.parse();
     if show_gramar{
         parser.print_parser();

@@ -1,0 +1,14 @@
+program{
+	do {
+		foo = bar + 3;
+		bar = 3 + 3 + 3;
+	}until(3 < 4);
+
+	while(3 < 4){
+		foo = 3;
+	}
+
+	if (3 < 4) then {
+		foo = a;
+	}
+}

@@ -1,0 +1,8 @@
+program{
+	if(3) then {
+		foo = 3 + 3;
+	}else{
+		foo = 4;
+	}
+	fi
+}
