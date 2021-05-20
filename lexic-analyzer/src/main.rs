@@ -18,17 +18,25 @@ mod compiler{
         TK_PROG, TK_IF, TK_ELSE, TK_FI, TK_DO, TK_UNTIL, TK_WHILE, TK_THEN,
         //Tokes para operaciones lógicas
         TK_NOT, TK_AND, TK_OR,
+        //Expresiones literales booleanas
+        TK_TRUE, TK_FALSE,
         NoToken
     }
 
     #[derive(Copy, Clone, PartialEq, Eq)]
     pub enum StatementType{
-        Sequence = 1, Program, Literal, Binary, Arithmetic, Relational, Variable, Read, NoType, Assignment, Begin, End, If, Repeat, While, Comment, Write, Not
+        Sequence = 1, Program, Literal,
+        Binary, Arithmetic, Relational,
+        Variable, Read, NoType,
+        Assignment, Begin, End,
+        If, Repeat, While, Comment,
+        Write, Not, LiteralBoolExp,
+        BooleanExp, VariableSeq, ListVariableDec
     }
 
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, PartialEq, Eq)]
     pub enum TinyType{
-        Integer, Float, Boolean, NoType
+        Integer = 1, Float, Boolean, NoType
     }
     
     #[derive(Debug, Clone)]
@@ -134,11 +142,11 @@ mod compiler{
         return result;
     }
 
-    pub fn new_program(token: &Token, program: &TreeNode)-> TreeNode{
+    pub fn new_program(token: &Token, variables: &TreeNode,  program: &TreeNode)-> TreeNode{
         let result = TreeNode{token: token.copy_token(),
         is_expression: false,
         is_lvalue: false,
-        nodes: vec![program.copy()],
+        nodes: vec![variables.copy(), program.copy()],
         statement_type: StatementType::Program,
         val_type: TinyType::NoType};
         return result;
@@ -179,6 +187,54 @@ mod compiler{
         return result;
     }
 
+    pub fn new_literal_boolean(token: &Token) -> TreeNode{
+        let result = TreeNode {
+            token: token.copy_token(),
+            is_expression: true,
+            is_lvalue: false,
+            nodes: vec![],
+            statement_type: StatementType::LiteralBoolExp,
+            val_type: TinyType::Boolean
+        };
+        return result;
+    }
+
+    pub fn new_boolean_exp(token: &Token, left: &TreeNode, right: &TreeNode) -> TreeNode {
+        let result = TreeNode {
+            token: token.copy_token(),
+            is_expression: true,
+            is_lvalue: false,
+            nodes: vec![left.copy(), right.copy()],
+            statement_type: StatementType::BooleanExp,
+            val_type: TinyType::Boolean
+        };
+        return result;
+    }
+
+    pub fn new_sequence_var(variables: &TreeNode) -> TreeNode {
+        let result = TreeNode{
+            token: Token{token: TokenType::NoToken, lexema: String::from(""), line: 0},
+            is_expression: false,
+            is_lvalue: false,
+            nodes: vec![variables.copy()],
+            statement_type: StatementType::VariableSeq,
+            val_type: TinyType::NoType
+        };
+        return result;
+
+    }
+    pub fn new_list_dec(token: &Token, variables: &TreeNode, val_type: TinyType) -> TreeNode{
+        let result = TreeNode {
+            token: token.copy_token(),
+            is_expression: false,
+            is_lvalue: false,
+            nodes: vec![variables.copy()],
+            statement_type: StatementType::ListVariableDec,
+            val_type: val_type
+        };
+        return result;
+    }
+
     impl TreeNode{
         pub fn copy(&self) -> TreeNode{
             return TreeNode{token: self.token.copy_token(), is_expression: self.is_expression, nodes: self.nodes.to_vec(), statement_type: self.statement_type, val_type: self.val_type, is_lvalue: self.is_lvalue}
@@ -210,6 +266,9 @@ mod compiler{
         }
         pub fn is_lvalue(&self) -> bool{
             self.is_lvalue
+        }
+        pub fn set_lvalue(&mut self, x: bool){
+            self.is_lvalue = x;
         }
         pub fn append(&mut self, next: &TreeNode){
             self.nodes.push(next.copy());
@@ -381,6 +440,12 @@ mod compiler{
                    }
                    "then" => {
                        return TokenType::TK_THEN
+                   }
+                   "true" => {
+                        return TokenType::TK_TRUE;
+                   }
+                   "false" => {
+                        return TokenType::TK_FALSE;
                    }
                    _ => {
                        return TokenType::TK_ID
@@ -580,7 +645,7 @@ mod compiler{
                     }
                 }
                 let result_token = Token {token: token, lexema: String::from(lexema), line: start_line};
-                if(self._trace){
+                if self._trace {
                     println!("({:?},{}, {})", result_token.token, result_token.lexema, result_token.line);
                 }
                 return result_token;
@@ -591,9 +656,12 @@ mod compiler{
     pub mod parser{
         use super::Token;
         use super::TokenType;
+        use super::TinyType;
         use super::TreeNode;
         use super::StatementType;
-        use super::{null_tree, new_var, new_literal, new_arithmetic, new_relational, new_assignment, new_program, new_sequence, new_if, new_repeat, new_while, null_token, new_comment, new_read, new_write};
+        use super::{null_tree, new_var, new_literal, new_arithmetic, new_relational, new_assignment,
+                    new_program, new_sequence, new_if, new_repeat, new_while, null_token, new_read,
+                    new_write, new_unary, new_literal_boolean, new_boolean_exp, new_list_dec, new_sequence_var};
         use super::scanner::Scanner;
 
         pub struct TokenParser{
@@ -626,7 +694,7 @@ mod compiler{
                 let program: Token = self.current_token.copy_token();
                 self.match_token(&TokenType::TK_PROG);
                 self.match_token(&TokenType::TK_LKEY);
-                self.program = new_program(&program, &self.seq_stmt());
+                self.program = new_program(&program, &self.seq_declaration(), &self.seq_stmt());
                 self.match_token(&TokenType::TK_RKEY);
                 if self.current_token.token != TokenType::TK_EOF {
                     self.syntax_error(&self.current_token.copy_token(), "Code ends before file");
@@ -670,6 +738,71 @@ mod compiler{
                 return retval;
             }
 
+            fn seq_declaration(&mut self) -> TreeNode{
+                let mut retval: TreeNode = new_sequence_var(&self.declaration());
+                while self.current_token.token == TokenType::TK_INT ||
+                self.current_token.token == TokenType::TK_FLOAT ||
+                self.current_token.token == TokenType::TK_BOOL {
+                    let q: TreeNode = self.declaration();
+                    retval.append(&q);
+                }
+                return retval;
+            }
+
+            fn declaration(&mut self) -> TreeNode {
+                let mut statement: TreeNode = null_tree();
+                match self.current_token.token {
+                    TokenType::TK_INT => {
+                        let _int: Token = self.current_token.copy_token();
+                        self.match_token(&TokenType::TK_INT);
+                        statement = self.list_declaration(&_int);
+                        self.match_token(&TokenType::TK_SEMICOLON);
+
+                    }
+                    TokenType::TK_FLOAT => {
+                        let _float: Token = self.current_token.copy_token();
+                        self.match_token(&TokenType::TK_FLOAT);
+                        statement = self.list_declaration(&_float);
+                        self.match_token(&TokenType::TK_SEMICOLON);
+                    }
+                    TokenType::TK_BOOL=> {
+                        let _bool: Token = self.current_token.copy_token();
+                        self.match_token(&TokenType::TK_BOOL);
+                        statement = self.list_declaration(&_bool);
+                        self.match_token(&TokenType::TK_SEMICOLON);
+                    }
+                    _ => {
+                        self.current_token = self.get_next_token();
+                        self.syntax_error(&self.current_token.copy_token(), "token in initial list variable declaration");
+                    }
+                }
+                return statement;
+            }
+
+            fn list_declaration(&mut self, token: &Token) -> TreeNode{
+                let _id: Token = self.current_token.copy_token();
+                self.match_token(&TokenType::TK_ID);
+                let mut first_var: TreeNode = new_var(&_id);
+                let mut val_type: TinyType = TinyType::NoType;
+                match token.token {
+                    TokenType::TK_INT => {val_type = TinyType::Integer}
+                    TokenType::TK_FLOAT => {val_type = TinyType::Float}
+                    TokenType::TK_BOOL => {val_type = TinyType::Boolean}
+                    _ => {}
+                }
+                first_var.set_type(&val_type);
+                let mut retval: TreeNode = new_list_dec(token, &first_var, val_type);
+                while self.current_token.token == TokenType::TK_COMMA {
+                    self.match_token(&TokenType::TK_COMMA);
+                    let _id: Token = self.current_token.copy_token();
+                    self.match_token(&TokenType::TK_ID);
+                    let mut _var: TreeNode = new_var(&_id);
+                    _var.set_type(&val_type);
+                    retval.append(&_var);
+                }
+                return retval;
+            }
+
             fn stmt(&mut self) -> TreeNode{
                 let mut statement: TreeNode = null_tree();
                 match self.current_token.token {
@@ -710,7 +843,7 @@ mod compiler{
             fn write_stmt(&mut self) -> TreeNode {
                 let _write: Token = self.current_token.copy_token();
                 self.match_token(&TokenType::TK_WRITE);
-                return new_write(&_write, &self.expression());
+                return new_write(&_write, &self.b_expression());
             }
 
             fn read_stmt(&mut self) -> TreeNode {
@@ -730,7 +863,7 @@ mod compiler{
                 let while_token: Token = self.current_token.copy_token();
                 self.match_token(&TokenType::TK_WHILE);
                 self.match_token(&TokenType::TK_LPAREN);
-                let condition: TreeNode = self.expression();
+                let condition: TreeNode = self.b_expression();
                 self.match_token(&TokenType::TK_RPAREN);
                 self.match_token(&TokenType::TK_LKEY);
                 let selection: TreeNode = self.seq_stmt();
@@ -745,7 +878,7 @@ mod compiler{
                 self.match_token(&TokenType::TK_IF);
 
                 self.match_token(&TokenType::TK_LPAREN);
-                let condition: TreeNode = self.expression();
+                let condition: TreeNode = self.b_expression();
                 self.match_token(&TokenType::TK_RPAREN);
 
                 self.match_token(&TokenType::TK_THEN);
@@ -773,7 +906,7 @@ mod compiler{
                 self.match_token(&TokenType::TK_RKEY);
                 self.match_token(&TokenType::TK_UNTIL);
                 self.match_token(&TokenType::TK_LPAREN);
-                let condition: TreeNode = self.expression();
+                let condition: TreeNode = self.b_expression();
                 self.match_token(&TokenType::TK_RPAREN);
                 
                 return new_repeat(&do_token, &condition, &selection);
@@ -786,26 +919,37 @@ mod compiler{
                 if _var.token == TokenType::TK_ID {
                     variable = new_var(&_var);
                 }
+                variable.set_lvalue(true);
                 self.match_token(&TokenType::TK_ID);
                 let _assign: Token = self.current_token.copy_token();
                 self.match_token(&TokenType::TK_ASSIGN);
-                let rvalue: TreeNode = self.expression();
+                let rvalue: TreeNode = self.b_expression();
                 return new_assignment(&_assign, &variable, &rvalue);
 
             }
             fn b_expression(&mut self) -> TreeNode{
                 let result: TreeNode = self.b_term();
                 if self.current_token.token == TokenType::TK_OR {
-
+                    let _or: Token = self.current_token.copy_token();
+                    self.match_token(&TokenType::TK_OR);
+                    return new_boolean_exp(&_or, &result, &self.b_term());
                 }
-                return result;
+                else{
+                    return result;
+                }
             }
             fn b_term (&mut self) -> TreeNode {
                 let result: TreeNode = self.not_factor();
                 if self.current_token.token == TokenType::TK_AND {
-
+                    let _and: Token = self.current_token.copy_token();
+                    self.match_token(&TokenType::TK_AND);
+                    return new_boolean_exp(&_and, &result, &self.not_factor());
+                }
+                else{
+                    return result;
                 }
             }
+
             fn not_factor(&mut self) -> TreeNode{
                 if self.current_token.token == TokenType::TK_NOT {
                     let _not: Token = self.current_token.copy_token();
@@ -816,6 +960,13 @@ mod compiler{
             }
 
             fn b_factor(&mut self) -> TreeNode {
+                if self.current_token.token == TokenType::TK_TRUE ||
+                   self.current_token.token == TokenType::TK_FALSE{
+                    let _bool: Token = self.current_token.copy_token();
+                    self.match_token(&_bool.token);
+                    return new_literal_boolean(&_bool);
+
+                }
                 return self.expression();
             }
 

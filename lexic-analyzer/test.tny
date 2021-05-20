@@ -1,12 +1,5 @@
-program{
-	// Hola a todos
-	/*
-	Chinga tu madre
-	*/
-	do {
-		foo = bar;
-	}until(4>4);
-	read x;
-	read y;
-	write 4+4+4+4;
+program {
+	int list, comma, kk;
+	float verga, pinocho;
+	read list;
 }
