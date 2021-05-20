@@ -23,7 +23,7 @@ mod compiler{
 
     #[derive(Copy, Clone, PartialEq, Eq)]
     pub enum StatementType{
-        Sequence = 1, Program, Literal, Binary, Arithmetic, Relational, Variable, Read, NoType, Assignment, Begin, End, If, Repeat, While
+        Sequence = 1, Program, Literal, Binary, Arithmetic, Relational, Variable, Read, NoType, Assignment, Begin, End, If, Repeat, While, Comment, Write, Not
     }
 
     #[derive(Copy, Clone)]
@@ -75,6 +75,18 @@ mod compiler{
         return result;
     }
 
+    pub fn new_unary(token: &Token, b_factor: &TreeNode) -> TreeNode{
+        let result = TreeNode {
+            token: token.copy_token(),
+            is_expression: true,
+            is_lvalue: false,
+            nodes: vec![b_factor.copy()],
+            statement_type: StatementType::Not,
+            val_type: TinyType::NoType
+        };
+        return result;
+    }
+
     pub fn new_if(token: &Token, condition: &TreeNode, selection: &TreeNode, otherwise: &TreeNode) -> TreeNode{
         let result = TreeNode {
             token: token.copy_token(),
@@ -82,6 +94,17 @@ mod compiler{
             is_lvalue: false,
             nodes: vec![condition.copy(), selection.copy(), otherwise.copy()],
             statement_type: StatementType::If, 
+            val_type: TinyType::NoType
+        };
+        return result;
+    }
+    pub fn new_comment(token: &Token) -> TreeNode{
+        let result = TreeNode{
+            token: token.copy_token(),
+            is_expression: false,
+            is_lvalue: false,
+            nodes: vec![],
+            statement_type: StatementType::Comment,
             val_type: TinyType::NoType
         };
         return result;
@@ -129,6 +152,30 @@ mod compiler{
             nodes: vec![stmt.copy()],
             statement_type: StatementType::Sequence,
             val_type: TinyType::NoType};
+        return result;
+    }
+
+    pub fn new_read(token: &Token, variable: &TreeNode) -> TreeNode{
+        let result = TreeNode{
+            token: token.copy_token(),
+            is_expression: false,
+            is_lvalue: false,
+            nodes: vec![variable.copy()],
+            statement_type: StatementType::Read,
+            val_type: TinyType::NoType
+        };
+        return result;
+    }
+
+    pub fn new_write(token: &Token, exp: &TreeNode) -> TreeNode{
+        let result = TreeNode{
+            token: token.copy_token(),
+            is_expression: false,
+            is_lvalue: false,
+            nodes: vec![exp.copy()],
+            statement_type: StatementType::Write,
+            val_type: TinyType::NoType
+        };
         return result;
     }
 
@@ -496,6 +543,27 @@ mod compiler{
                                 token = TokenType::TK_ID;
                             }
                         }
+
+                        StateType::CommentLine => {
+                            save = false;
+                            if self.current_pos >= self.line_buff.len() {
+                                token = TokenType::TK_COMMENT_LINE;
+                                state = StateType::Start;
+                            }
+                        }
+                        StateType::CommentBlock => {
+                            save = false;
+                            let tempC: char = self.get_next_char();
+                            if (c == '*') && (tempC == '/') {
+                                token = TokenType::TK_COMMENT_BLOCK;
+                                state = StateType::Start;
+                            }
+                            else{
+                                self.unget_next_char();
+                            }
+                        }
+
+                        //Should never happen
                         StateType::IsDone => {
                         }
                         _ => {
@@ -525,7 +593,7 @@ mod compiler{
         use super::TokenType;
         use super::TreeNode;
         use super::StatementType;
-        use super::{null_tree, new_var, new_literal, new_arithmetic, new_relational, new_assignment, new_program, new_sequence, new_if, new_repeat, new_while, null_token};
+        use super::{null_tree, new_var, new_literal, new_arithmetic, new_relational, new_assignment, new_program, new_sequence, new_if, new_repeat, new_while, null_token, new_comment, new_read, new_write};
         use super::scanner::Scanner;
 
         pub struct TokenParser{
@@ -541,7 +609,7 @@ mod compiler{
         impl TokenParser{
 
             fn error_msg(&mut self, label: &str, token: &Token, msg: &str){
-                eprintln!("error: line - {} error: {}, msg: {}", token.line, label, msg);
+                eprintln!("error: line - {} error: {}, token: {:?}, msg: {}", token.line, label, token.token, msg);
                 self._error = true;
             }
 
@@ -590,8 +658,10 @@ mod compiler{
                 while (self.current_token.token != TokenType::TK_EOF) && (self.current_token.token != TokenType::TK_RKEY) &&
                     (self.current_token.token != TokenType::TK_ELSE) && (self.current_token.token != TokenType::TK_UNTIL) {
                         let q: TreeNode = self.stmt();
-                        if q.token.token != TokenType::NoToken && q.statement_type != StatementType::NoType {
-                            retval.append(&q);
+                        if (q.token.token != TokenType::NoToken) && (q.statement_type != StatementType::NoType) {
+                            if q.statement_type != StatementType::Comment {
+                                retval.append(&q);
+                            }
                         }
                         else {
                             break;
@@ -617,11 +687,43 @@ mod compiler{
                     TokenType::TK_WHILE => {
                         statement = self.while_stmt();
                     }
+                    TokenType::TK_READ => {
+                        statement = self.read_stmt();
+                        self.match_token(&TokenType::TK_SEMICOLON);
+                    }
+                    TokenType::TK_WRITE => {
+                        statement = self.write_stmt();
+                        self.match_token(&TokenType::TK_SEMICOLON);
+                    }
+                    TokenType::TK_LKEY => {
+                        statement = self.seq_stmt();
+                        self.match_token(&TokenType::TK_RKEY);
+                    }
                     _ => {
                         self.current_token = self.get_next_token();
+                        self.syntax_error(&self.current_token.copy_token(), "Code ends before file");
                     }
                 }
                 return statement;
+            }
+
+            fn write_stmt(&mut self) -> TreeNode {
+                let _write: Token = self.current_token.copy_token();
+                self.match_token(&TokenType::TK_WRITE);
+                return new_write(&_write, &self.expression());
+            }
+
+            fn read_stmt(&mut self) -> TreeNode {
+
+                let mut variable: TreeNode = null_tree();
+                let _read: Token = self.current_token.copy_token();
+                self.match_token(&TokenType::TK_READ);
+                let _var: Token = self.current_token.copy_token();
+                if _var.token == TokenType::TK_ID {
+                    variable = new_var(&_var);
+                }
+                self.match_token(&TokenType::TK_ID);
+                return new_read(&_read, &variable);
             }
 
             fn while_stmt(&mut self) -> TreeNode {
@@ -691,6 +793,32 @@ mod compiler{
                 return new_assignment(&_assign, &variable, &rvalue);
 
             }
+            fn b_expression(&mut self) -> TreeNode{
+                let result: TreeNode = self.b_term();
+                if self.current_token.token == TokenType::TK_OR {
+
+                }
+                return result;
+            }
+            fn b_term (&mut self) -> TreeNode {
+                let result: TreeNode = self.not_factor();
+                if self.current_token.token == TokenType::TK_AND {
+
+                }
+            }
+            fn not_factor(&mut self) -> TreeNode{
+                if self.current_token.token == TokenType::TK_NOT {
+                    let _not: Token = self.current_token.copy_token();
+                    self.match_token(&TokenType::TK_NOT);
+                    return new_unary(&_not, &self.b_factor());
+                }
+                return self.b_factor();
+            }
+
+            fn b_factor(&mut self) -> TreeNode {
+                return self.expression();
+            }
+
             fn expression(&mut self) -> TreeNode{
                 let result: TreeNode = self.simple_exp();
                 if self.current_token.token == TokenType::TK_LT || self.current_token.token == TokenType::TK_LTE ||
@@ -709,7 +837,7 @@ mod compiler{
                 if self.current_token.token == TokenType::TK_MINUS || self.current_token.token == TokenType::TK_PLUS {
                     let _op = self.current_token.copy_token();
                     self.match_token(&_op.token);
-                    return new_arithmetic(&_op, &result, &self.simple_exp());
+                    return new_arithmetic(&_op, &result, &self.term());
                 }
                 else{
                     return result;
@@ -738,6 +866,12 @@ mod compiler{
                         self.match_token(&TokenType::TK_ID);
                         return new_var(&_id);
                     }
+                    TokenType::TK_LPAREN => {
+                        self.match_token(&TokenType::TK_LPAREN);
+                        let exp: TreeNode = self.expression();
+                        self.match_token(&TokenType::TK_RPAREN);
+                        return exp;
+                    }
                     _ => {
                         panic!("Error, this token couldn't be processed: {}", &self.current_token.lexema)
                     }
@@ -765,18 +899,27 @@ fn main() {
     let mut show_tokens = false;
     let mut show_gramar = true;
     let args: Vec<String> = env::args().collect();
-    if args.iter().any(|s| ONLY_TOKENS == s){
-        show_tokens = true;
-        show_gramar = false;
-    }
-    if args.iter().any(|s| ONLY_GRAMAR == s) {
-        show_tokens = false;
-        show_gramar = true;
-    }
-    let mut Scanner  = scanner::Scanner::new(&args[args.len()-1], false);
+
+    // if args.iter().any(|s| ONLY_TOKENS == s){
+    //     show_tokens = true;
+    //     show_gramar = false;
+    // }
+    // if args.iter().any(|s| ONLY_GRAMAR == s) {
+    //     show_tokens = false;
+    //     show_gramar = true;
+    // }
+
+    let mut Scanner  = scanner::Scanner::new(&args[args.len()-1], show_tokens);
+
+    // let mut get_token: TokenType = Scanner.get_token().token;
+    // while get_token != TokenType::TK_EOF {
+    //     get_token = Scanner.get_token().token;
+    // }
+
     let mut parser: parser::TokenParser = parser::new(Scanner);
     parser.parse();
     if show_gramar{
         parser.print_parser();
     }
+
 }
