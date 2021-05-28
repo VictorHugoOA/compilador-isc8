@@ -106,17 +106,6 @@ mod compiler{
         };
         return result;
     }
-    pub fn new_comment(token: &Token) -> TreeNode{
-        let result = TreeNode{
-            token: token.copy_token(),
-            is_expression: false,
-            is_lvalue: false,
-            nodes: vec![],
-            statement_type: StatementType::Comment,
-            val_type: TinyType::NoType
-        };
-        return result;
-    }
 
     pub fn new_repeat(token: &Token, condition: &TreeNode, selection: &TreeNode) -> TreeNode {
         let result = TreeNode {
@@ -273,14 +262,42 @@ mod compiler{
         pub fn append(&mut self, next: &TreeNode){
             self.nodes.push(next.copy());
         }
-        pub fn print_tree(&self){
-            if self.statement_type != StatementType::Sequence {
-                println!("({:?}, {})", self.token.token, self.token.lexema);
+        pub fn print_grammar_tree(&self, number_idents: u32){
+
+            if self.statement_type != StatementType::Sequence && self.statement_type != StatementType::VariableSeq && self.token.token != TokenType::NoToken{
+
+                for n in 1..number_idents{
+                    print!(" ");
+                }
+
+                println!("{:?}", self.token.token);
+
+                for n in 1..=(number_idents + 1){
+                    print!(" ");
+                }
+                println!("{}", self.token.lexema);
             }
+
             for node in &self.nodes {
-                node.print_tree();
+                node.print_grammar_tree(number_idents + 1);
             }
+
         }
+
+        pub fn print_syntax_tree(&self, number_idents: u32){
+            if self.statement_type != StatementType::Sequence && self.statement_type != StatementType::VariableSeq && self.token.token != TokenType::NoToken{
+                for n in 1..number_idents {
+                    print!(" ");
+                }
+                println!("{}", self.token.lexema);
+            }
+
+            for node in &self.nodes {
+                node.print_syntax_tree(number_idents + 1);
+            }
+
+        }
+
     }
    
     pub fn null_token() -> Token {
@@ -717,11 +734,23 @@ mod compiler{
                 return self.scanner.get_token();
             }
 
-            pub fn print_parser(&self){
-                self.program.print_tree();
+            pub fn print_grammar_parser(&self){
+                println!("\nARBOL GRAMATICAL\n");
+                self.program.print_grammar_tree(0);
             }
 
+            pub fn print_syntax_parser(&self){
+                println!("\nARBOL GRAMATICAL\n");
+                self.program.print_syntax_tree(0);
+            }
+
+
             fn seq_stmt(&mut self) -> TreeNode{
+
+                if self.current_token.token == TokenType::TK_RKEY {
+                    return new_sequence(&null_tree());
+                }
+
                 let mut retval: TreeNode = new_sequence(&self.stmt());
                 while (self.current_token.token != TokenType::TK_EOF) && (self.current_token.token != TokenType::TK_RKEY) &&
                     (self.current_token.token != TokenType::TK_ELSE) && (self.current_token.token != TokenType::TK_UNTIL) {
@@ -739,6 +768,11 @@ mod compiler{
             }
 
             fn seq_declaration(&mut self) -> TreeNode{
+
+                if self.current_token.token == TokenType::TK_RKEY {
+                    return new_sequence_var(&null_tree());
+                }
+
                 let mut retval: TreeNode = new_sequence_var(&self.declaration());
                 while self.current_token.token == TokenType::TK_INT ||
                 self.current_token.token == TokenType::TK_FLOAT ||
@@ -775,6 +809,7 @@ mod compiler{
                         self.current_token = self.get_next_token();
                         self.syntax_error(&self.current_token.copy_token(), "token in initial list variable declaration");
                     }
+                    
                 }
                 return statement;
             }
@@ -1047,20 +1082,9 @@ const ONLY_TOKENS:&str = "--only-tokens";
 const ONLY_GRAMAR:&str = "--only-gramar";
 
 fn main() {
-    let mut show_tokens = false;
-    let mut show_gramar = true;
     let args: Vec<String> = env::args().collect();
 
-    // if args.iter().any(|s| ONLY_TOKENS == s){
-    //     show_tokens = true;
-    //     show_gramar = false;
-    // }
-    // if args.iter().any(|s| ONLY_GRAMAR == s) {
-    //     show_tokens = false;
-    //     show_gramar = true;
-    // }
-
-    let mut Scanner  = scanner::Scanner::new(&args[args.len()-1], show_tokens);
+    let mut Scanner  = scanner::Scanner::new(&args[args.len()-1], true);
 
     // let mut get_token: TokenType = Scanner.get_token().token;
     // while get_token != TokenType::TK_EOF {
@@ -1069,8 +1093,8 @@ fn main() {
 
     let mut parser: parser::TokenParser = parser::new(Scanner);
     parser.parse();
-    if show_gramar{
-        parser.print_parser();
-    }
+
+    parser.print_grammar_parser();
+    parser.print_syntax_parser();
 
 }

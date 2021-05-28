@@ -1,5 +1,0 @@
-program {
-	int list, comma, kk;
-	float verga, pinocho;
-	read list;
-}
