@@ -735,12 +735,12 @@ mod compiler{
             }
 
             pub fn print_grammar_parser(&self){
-                println!("\nARBOL GRAMATICAL\n");
-                self.program.print_grammar_tree(0);
+                println!("ARBOL GRAMATICAL");
+                self.program.print_grammar_tree(1);
             }
 
             pub fn print_syntax_parser(&self){
-                println!("\nARBOL GRAMATICAL\n");
+                println!("ARBOL SINTACTICO");
                 self.program.print_syntax_tree(0);
             }
 
@@ -1059,7 +1059,8 @@ mod compiler{
                         return exp;
                     }
                     _ => {
-                        panic!("Error, this token couldn't be processed: {}", &self.current_token.lexema)
+                        self.syntax_error(&self.current_token.copy_token(), "Code ends before file");
+                        return null_tree();
                     }
                 }
             }
@@ -1085,11 +1086,6 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     let mut Scanner  = scanner::Scanner::new(&args[args.len()-1], true);
-
-    // let mut get_token: TokenType = Scanner.get_token().token;
-    // while get_token != TokenType::TK_EOF {
-    //     get_token = Scanner.get_token().token;
-    // }
 
     let mut parser: parser::TokenParser = parser::new(Scanner);
     parser.parse();

@@ -1,5 +1,6 @@
 program {
     int x, y;
+    float b;
     x = 0; //Comentario1
     y = 4; /* comentario 2*/
     do{

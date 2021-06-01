@@ -1,0 +1,4 @@
+program {
+    int variable1, x, y, z;
+    if(x==1) then { x = 1; } else {x=0;}fi
+}
