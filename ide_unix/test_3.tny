@@ -6,7 +6,7 @@ program {
     a = 0.0;
     b = 3.0;
     do {
-        if(x < y) then {
+        if(x < y)  {
             y = y - 1;
         } else {
             x = x - 2;

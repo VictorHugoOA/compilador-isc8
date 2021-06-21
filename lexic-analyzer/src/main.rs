@@ -610,7 +610,7 @@ mod compiler{
                             }
                         }
                         StateType::Num => {
-                            if !c.is_digit(10) {
+                            if !c.is_digit(10) && c != '.' {
                                 self.unget_next_char();
                                 state = StateType::IsDone;
                                 save = false;
@@ -1069,25 +1069,18 @@ mod compiler{
 }
 
 // use crate::compiler::Scanner;
-use std::fs;
 use std::env;
-use std::io::BufReader;
-use std::io::prelude::*;
 
 // use crate::compiler::Token;
-use crate::compiler::TokenType;
 use crate::compiler::parser;
 use crate::compiler::scanner;
-
-const ONLY_TOKENS:&str = "--only-tokens";
-const ONLY_GRAMAR:&str = "--only-gramar";
 
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let mut Scanner  = scanner::Scanner::new(&args[args.len()-1], true);
+    let mut scanner  = scanner::Scanner::new(&args[args.len()-1], true);
 
-    let mut parser: parser::TokenParser = parser::new(Scanner);
+    let mut parser: parser::TokenParser = parser::new(scanner);
     parser.parse();
 
     parser.print_grammar_parser();
