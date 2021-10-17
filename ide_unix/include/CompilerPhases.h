@@ -10,6 +10,7 @@ enum{
     LEXER_PHASE = 0,
     SYNTAX_PHASE,
     SEMANTIC_PHASE,
+    SYMBOL_TABLE,
     MEDIUM_CODE_PHASE,
     PHASES_COUNT,
 };
@@ -20,14 +21,17 @@ class CompilerPhases: public wxNotebook
         CompilerPhases(wxWindow *parent, wxWindowID id = wxID_ANY, const wxPoint &pos = wxDefaultPosition, const wxSize &size = wxDefaultSize);
         virtual ~CompilerPhases();
         void SetTreeFromStringArray(wxArrayString& Array);
+        void SetSemanticTreeFromStringArray(wxArrayString& Array);
 
         void SetTextLexic(wxString& Text);
+        void SetSymbolTable(wxString& Text);
 
     protected:
 
     private:
         EditorText* LexerPhase;
-        EditorText* SemanticPhase;
+        wxTreeCtrl* SemanticPhase;
+        EditorText* SymbolTable;
         EditorText* MediumCodePhase;
         wxTreeCtrl* SyntaxTree;
 };

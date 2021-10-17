@@ -1,1 +1,5 @@
-program {}
+program {
+    int x, y;
+    write z;
+    write y;
+}

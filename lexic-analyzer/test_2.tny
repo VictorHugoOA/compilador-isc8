@@ -1,5 +1,10 @@
 program {
     int x, y;
-    write x;
-    write y;
+    x = 0; //Comentario 1
+    y = 4; /* comentario 2 */
+    do {
+        if(x < y) then{
+            y = y - 1;
+        } fi
+    }until(y >= 0);
 }

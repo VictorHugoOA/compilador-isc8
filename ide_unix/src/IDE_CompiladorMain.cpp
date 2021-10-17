@@ -333,6 +333,7 @@ void IDE_CompiladorFrame::OnCompile(wxCommandEvent& event){
     Command.Append(editor->GetFilename());
 
     wxString OutTokenString(wxT(""));
+    wxString SymbolString(wxT(""));
     wxArrayString OutSyntaxArray;
     wxArrayString OutGrammarArray;
     wxString ErrorsString(wxT(""));
@@ -359,8 +360,15 @@ void IDE_CompiladorFrame::OnCompile(wxCommandEvent& event){
     }
 
     Result = OutputStream.ReadLine();
-    while(!Result.IsEmpty()){
+    while(!Result.IsSameAs("TABLA DE SIMBOLOS")){
         OutSyntaxArray.Add(Result);
+        Result = OutputStream.ReadLine();
+    }
+
+    Result = OutputStream.ReadLine();
+    while(!Result.IsEmpty()){
+        SymbolString.Append(Result);
+        SymbolString.Append("\n");
         Result = OutputStream.ReadLine();
     }
 
@@ -373,7 +381,8 @@ void IDE_CompiladorFrame::OnCompile(wxCommandEvent& event){
 
     phases->SetTextLexic(OutTokenString);
     phases->SetTreeFromStringArray(OutSyntaxArray);
-    // phases->SetTreeFromStringArray(OutGrammarArray);
+    phases->SetSemanticTreeFromStringArray(OutGrammarArray);
+    phases->SetSymbolTable(SymbolString);
 
     results->setErrorText(ErrorsString);
 

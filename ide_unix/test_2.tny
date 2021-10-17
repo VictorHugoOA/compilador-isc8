@@ -1,10 +1,12 @@
 program {
-    int x, y;
+    int x;
+    float y;
+    float x;
     x = 0; //Comentario 1
     y = 4; /* comentario 2 */
     do {
         if(x < y) then{
-            y = y - 1;
+            y = y - 1.0;
         } fi
     }until(y >= 0);
 }

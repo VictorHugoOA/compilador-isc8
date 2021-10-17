@@ -1,53 +1,112 @@
 // Este es el modulo completo del compilador con todas las definiciones de los analizadores
-mod compiler{
+mod compiler {
     #[derive(Debug, Copy, Clone, PartialEq, Eq)]
     //Es un enumerador para los tokens del lenguaje para el que vamos a crear el compilador
-    pub enum TokenType{
+    pub enum TokenType {
         // Token para definir bloques de comentarios
-        TK_COMMENT_LINE = 1, TK_COMMENT_BLOCK,
+        TK_COMMENT_LINE = 1,
+        TK_COMMENT_BLOCK,
         // para leer y escribir variables
-        TK_READ, TK_WRITE,
+        TK_READ,
+        TK_WRITE,
         // Tokens multicaracter para numeros o identificadores
-        TK_ID, TK_NUM, TK_INT, TK_FLOAT, TK_BOOL,
-        //Símbolos especiales 
-        TK_LPAREN, TK_RPAREN, TK_SEMICOLON, TK_COMMA, TK_ASSIGN, TK_PLUS, TK_MINUS, TK_TIMES,
-        TK_OVER, TK_EXP, TK_LT, TK_LTE, TK_GT, TK_GTE, TK_EQ, TK_DIF, TK_RKEY, TK_LKEY,
+        TK_ID,
+        TK_NUM,
+        TK_INT,
+        TK_FLOAT,
+        TK_BOOL,
+        TK_DECIMAL,
+        //Símbolos especiales
+        TK_LPAREN,
+        TK_RPAREN,
+        TK_SEMICOLON,
+        TK_COMMA,
+        TK_ASSIGN,
+        TK_PLUS,
+        TK_MINUS,
+        TK_TIMES,
+        TK_OVER,
+        TK_EXP,
+        TK_LT,
+        TK_LTE,
+        TK_GT,
+        TK_GTE,
+        TK_EQ,
+        TK_DIF,
+        TK_RKEY,
+        TK_LKEY,
         //Tokens para casos especiales
-        TK_EOF, TK_ERROR,
+        TK_EOF,
+        TK_ERROR,
         //Tokens para flujo de operaciones
-        TK_PROG, TK_IF, TK_ELSE, TK_FI, TK_DO, TK_UNTIL, TK_WHILE, TK_THEN,
+        TK_PROG,
+        TK_IF,
+        TK_ELSE,
+        TK_FI,
+        TK_DO,
+        TK_UNTIL,
+        TK_WHILE,
+        TK_THEN,
         //Tokes para operaciones lógicas
-        TK_NOT, TK_AND, TK_OR,
+        TK_NOT,
+        TK_AND,
+        TK_OR,
         //Expresiones literales booleanas
-        TK_TRUE, TK_FALSE,
-        NoToken
+        TK_TRUE,
+        TK_FALSE,
+        NoToken,
+    }
+
+    #[derive(Copy, Clone, PartialEq, Eq, Debug)]
+    pub enum TinyType {
+        Integer = 1,
+        Float,
+        Boolean,
+        NoType,
+    }
+
+    #[derive(Clone, PartialEq, Eq)]
+    pub struct BucketList {
+        lines: Vec<u32>,
+        mem_location: u32,
+        data_type: TinyType,
     }
 
     #[derive(Copy, Clone, PartialEq, Eq)]
-    pub enum StatementType{
-        Sequence = 1, Program, Literal,
-        Binary, Arithmetic, Relational,
-        Variable, Read, NoType,
-        Assignment, Begin, End,
-        If, Repeat, While, Comment,
-        Write, Not, LiteralBoolExp,
-        BooleanExp, VariableSeq, ListVariableDec
+    pub enum StatementType {
+        Sequence = 1,
+        Program,
+        Literal,
+        Binary,
+        Arithmetic,
+        Relational,
+        Variable,
+        Read,
+        NoType,
+        Assignment,
+        Begin,
+        End,
+        If,
+        Repeat,
+        While,
+        Comment,
+        Write,
+        Not,
+        LiteralBoolExp,
+        BooleanExp,
+        VariableSeq,
+        ListVariableDec,
     }
 
-    #[derive(Copy, Clone, PartialEq, Eq)]
-    pub enum TinyType{
-        Integer = 1, Float, Boolean, NoType
-    }
-    
     #[derive(Debug, Clone)]
-    pub struct Token{
+    pub struct Token {
         pub token: TokenType,
         pub lexema: String,
-        pub line: u32
+        pub line: u32,
     }
 
     #[derive(Clone)]
-    pub struct TreeNode{
+    pub struct TreeNode {
         token: Token,
         is_expression: bool,
         nodes: Vec<TreeNode>,
@@ -56,53 +115,112 @@ mod compiler{
         is_lvalue: bool,
     }
 
-    pub fn null_tree() ->  TreeNode{
-        return TreeNode {token: Token{token: TokenType::NoToken, lexema: String::from(""), line: 0}, is_expression: false, nodes: vec![], statement_type: StatementType::NoType, val_type: TinyType::NoType, is_lvalue: false};
+    pub fn null_tree() -> TreeNode {
+        return TreeNode {
+            token: Token {
+                token: TokenType::NoToken,
+                lexema: String::from(""),
+                line: 0,
+            },
+            is_expression: false,
+            nodes: vec![],
+            statement_type: StatementType::NoType,
+            val_type: TinyType::NoType,
+            is_lvalue: false,
+        };
     }
 
-    pub fn new_literal(token: &Token) -> TreeNode{
-        let result = TreeNode {token: token.copy_token(), is_expression: true, is_lvalue: false, nodes: vec![], statement_type: StatementType::Literal, val_type: TinyType::NoType};
+    pub fn new_literal(token: &Token, data_type: TinyType) -> TreeNode {
+        let result = TreeNode {
+            token: token.copy_token(),
+            is_expression: true,
+            is_lvalue: false,
+            nodes: vec![],
+            statement_type: StatementType::Literal,
+            val_type: data_type,
+        };
         return result;
     }
-    pub fn new_var(token: &Token) -> TreeNode{
-        let result = TreeNode {token: token.copy_token(), is_expression: true, is_lvalue: false, nodes: vec![], statement_type: StatementType::Variable, val_type: TinyType::NoType};
+    pub fn new_var(token: &Token) -> TreeNode {
+        let result = TreeNode {
+            token: token.copy_token(),
+            is_expression: true,
+            is_lvalue: false,
+            nodes: vec![],
+            statement_type: StatementType::Variable,
+            val_type: TinyType::NoType,
+        };
         return result;
     }
-    pub fn new_arithmetic(token: &Token, left_value: &TreeNode, right_value: &TreeNode) -> TreeNode{
-        let result = TreeNode{token: token.copy_token(), is_expression: true, nodes: vec![left_value.copy(), right_value.copy()], statement_type: StatementType::NoType, val_type: TinyType::NoType, is_lvalue: false};
+    pub fn new_arithmetic(
+        token: &Token,
+        left_value: &TreeNode,
+        right_value: &TreeNode,
+    ) -> TreeNode {
+        let result = TreeNode {
+            token: token.copy_token(),
+            is_expression: true,
+            nodes: vec![left_value.copy(), right_value.copy()],
+            statement_type: StatementType::Arithmetic,
+            val_type: TinyType::NoType,
+            is_lvalue: false,
+        };
         return result;
     }
 
-    pub fn new_relational(token: &Token, left_value: &TreeNode, right_value: &TreeNode) -> TreeNode{
-        let result = TreeNode{token: token.copy_token(), is_expression: true, nodes: vec![left_value.copy(), right_value.copy()], statement_type: StatementType::NoType, val_type: TinyType::NoType, is_lvalue: false};
+    pub fn new_relational(
+        token: &Token,
+        left_value: &TreeNode,
+        right_value: &TreeNode,
+    ) -> TreeNode {
+        let result = TreeNode {
+            token: token.copy_token(),
+            is_expression: true,
+            nodes: vec![left_value.copy(), right_value.copy()],
+            statement_type: StatementType::Relational,
+            val_type: TinyType::NoType,
+            is_lvalue: false,
+        };
         return result;
     }
 
-    pub fn new_assignment(token: &Token, _var: &TreeNode, rvalue: &TreeNode) -> TreeNode{
-        let result = TreeNode{token: token.copy_token(), is_expression: false, nodes: vec![_var.copy(), rvalue.copy()], statement_type: StatementType::Assignment, val_type: TinyType::NoType, is_lvalue: false};
+    pub fn new_assignment(token: &Token, _var: &TreeNode, rvalue: &TreeNode) -> TreeNode {
+        let result = TreeNode {
+            token: token.copy_token(),
+            is_expression: false,
+            nodes: vec![_var.copy(), rvalue.copy()],
+            statement_type: StatementType::Assignment,
+            val_type: TinyType::NoType,
+            is_lvalue: false,
+        };
         return result;
     }
 
-    pub fn new_unary(token: &Token, b_factor: &TreeNode) -> TreeNode{
+    pub fn new_unary(token: &Token, b_factor: &TreeNode) -> TreeNode {
         let result = TreeNode {
             token: token.copy_token(),
             is_expression: true,
             is_lvalue: false,
             nodes: vec![b_factor.copy()],
             statement_type: StatementType::Not,
-            val_type: TinyType::NoType
+            val_type: TinyType::Boolean,
         };
         return result;
     }
 
-    pub fn new_if(token: &Token, condition: &TreeNode, selection: &TreeNode, otherwise: &TreeNode) -> TreeNode{
+    pub fn new_if(
+        token: &Token,
+        condition: &TreeNode,
+        selection: &TreeNode,
+        otherwise: &TreeNode,
+    ) -> TreeNode {
         let result = TreeNode {
             token: token.copy_token(),
             is_expression: false,
             is_lvalue: false,
             nodes: vec![condition.copy(), selection.copy(), otherwise.copy()],
-            statement_type: StatementType::If, 
-            val_type: TinyType::NoType
+            statement_type: StatementType::If,
+            val_type: TinyType::NoType,
         };
         return result;
     }
@@ -114,7 +232,7 @@ mod compiler{
             is_lvalue: false,
             nodes: vec![condition.copy(), selection.copy()],
             statement_type: StatementType::Repeat,
-            val_type: TinyType::NoType
+            val_type: TinyType::NoType,
         };
         return result;
     }
@@ -126,64 +244,71 @@ mod compiler{
             is_lvalue: false,
             nodes: vec![condition.copy(), selection.copy()],
             statement_type: StatementType::While,
-            val_type: TinyType::NoType
+            val_type: TinyType::NoType,
         };
         return result;
     }
 
-    pub fn new_program(token: &Token, variables: &TreeNode,  program: &TreeNode)-> TreeNode{
-        let result = TreeNode{token: token.copy_token(),
-        is_expression: false,
-        is_lvalue: false,
-        nodes: vec![variables.copy(), program.copy()],
-        statement_type: StatementType::Program,
-        val_type: TinyType::NoType};
+    pub fn new_program(token: &Token, variables: &TreeNode, program: &TreeNode) -> TreeNode {
+        let result = TreeNode {
+            token: token.copy_token(),
+            is_expression: false,
+            is_lvalue: false,
+            nodes: vec![variables.copy(), program.copy()],
+            statement_type: StatementType::Program,
+            val_type: TinyType::NoType,
+        };
         return result;
     }
 
-    pub fn new_sequence(stmt: &TreeNode)-> TreeNode{
-        let result = TreeNode{
-            token: Token{token: TokenType::NoToken, lexema: String::from(""), line: 0},
+    pub fn new_sequence(stmt: &TreeNode) -> TreeNode {
+        let result = TreeNode {
+            token: Token {
+                token: TokenType::NoToken,
+                lexema: String::from(""),
+                line: 0,
+            },
             is_expression: false,
             is_lvalue: false,
             nodes: vec![stmt.copy()],
             statement_type: StatementType::Sequence,
-            val_type: TinyType::NoType};
+            val_type: TinyType::NoType,
+        };
         return result;
     }
 
-    pub fn new_read(token: &Token, variable: &TreeNode) -> TreeNode{
-        let result = TreeNode{
+    pub fn new_read(token: &Token, variable: &TreeNode) -> TreeNode {
+        let result = TreeNode {
             token: token.copy_token(),
             is_expression: false,
             is_lvalue: false,
             nodes: vec![variable.copy()],
             statement_type: StatementType::Read,
-            val_type: TinyType::NoType
+            val_type: TinyType::NoType,
         };
         return result;
     }
 
-    pub fn new_write(token: &Token, exp: &TreeNode) -> TreeNode{
-        let result = TreeNode{
+    pub fn new_write(token: &Token, exp: &TreeNode) -> TreeNode {
+        let result = TreeNode {
             token: token.copy_token(),
             is_expression: false,
             is_lvalue: false,
             nodes: vec![exp.copy()],
             statement_type: StatementType::Write,
-            val_type: TinyType::NoType
+            val_type: TinyType::NoType,
         };
         return result;
     }
 
-    pub fn new_literal_boolean(token: &Token) -> TreeNode{
+    pub fn new_literal_boolean(token: &Token) -> TreeNode {
         let result = TreeNode {
             token: token.copy_token(),
             is_expression: true,
             is_lvalue: false,
             nodes: vec![],
             statement_type: StatementType::LiteralBoolExp,
-            val_type: TinyType::Boolean
+            val_type: TinyType::Boolean,
         };
         return result;
     }
@@ -195,41 +320,51 @@ mod compiler{
             is_lvalue: false,
             nodes: vec![left.copy(), right.copy()],
             statement_type: StatementType::BooleanExp,
-            val_type: TinyType::Boolean
+            val_type: TinyType::Boolean,
         };
         return result;
     }
 
     pub fn new_sequence_var(variables: &TreeNode) -> TreeNode {
-        let result = TreeNode{
-            token: Token{token: TokenType::NoToken, lexema: String::from(""), line: 0},
+        let result = TreeNode {
+            token: Token {
+                token: TokenType::NoToken,
+                lexema: String::from(""),
+                line: 0,
+            },
             is_expression: false,
             is_lvalue: false,
             nodes: vec![variables.copy()],
             statement_type: StatementType::VariableSeq,
-            val_type: TinyType::NoType
+            val_type: TinyType::NoType,
         };
         return result;
-
     }
-    pub fn new_list_dec(token: &Token, variables: &TreeNode, val_type: TinyType) -> TreeNode{
+    pub fn new_list_dec(token: &Token, variables: &TreeNode, val_type: TinyType) -> TreeNode {
         let result = TreeNode {
             token: token.copy_token(),
             is_expression: false,
             is_lvalue: false,
             nodes: vec![variables.copy()],
             statement_type: StatementType::ListVariableDec,
-            val_type: val_type
+            val_type: val_type,
         };
         return result;
     }
 
-    impl TreeNode{
-        pub fn copy(&self) -> TreeNode{
-            return TreeNode{token: self.token.copy_token(), is_expression: self.is_expression, nodes: self.nodes.to_vec(), statement_type: self.statement_type, val_type: self.val_type, is_lvalue: self.is_lvalue}
+    impl TreeNode {
+        pub fn copy(&self) -> TreeNode {
+            return TreeNode {
+                token: self.token.copy_token(),
+                is_expression: self.is_expression,
+                nodes: self.nodes.to_vec(),
+                statement_type: self.statement_type,
+                val_type: self.val_type,
+                is_lvalue: self.is_lvalue,
+            };
         }
         pub fn type_name(&self) -> &str {
-            match &self.val_type{
+            match &self.val_type {
                 TinyType::Integer => {
                     return "int";
                 }
@@ -239,53 +374,56 @@ mod compiler{
                 TinyType::Boolean => {
                     return "bool";
                 }
-                 _ => {
+                _ => {
                     return "no_type";
                 }
             }
         }
+
         pub fn is_expression(&self) -> bool {
             self.is_expression
         }
-        pub fn get_type(&self) -> TinyType{
+
+        pub fn get_type(&self) -> TinyType {
             return self.val_type;
         }
+
         pub fn set_type(&mut self, new_type: &TinyType) {
             self.val_type = *new_type;
         }
-        pub fn is_lvalue(&self) -> bool{
+
+        pub fn is_lvalue(&self) -> bool {
             self.is_lvalue
         }
-        pub fn set_lvalue(&mut self, x: bool){
+
+        pub fn set_lvalue(&mut self, x: bool) {
             self.is_lvalue = x;
         }
-        pub fn append(&mut self, next: &TreeNode){
+        pub fn append(&mut self, next: &TreeNode) {
             self.nodes.push(next.copy());
         }
-        pub fn print_grammar_tree(&self, number_idents: u32){
 
-            if self.statement_type != StatementType::Sequence && self.statement_type != StatementType::VariableSeq && self.token.token != TokenType::NoToken{
-
-                for n in 1..number_idents{
+        pub fn print_grammar_tree(&self, number_idents: u32) {
+            if self.statement_type != StatementType::Sequence
+                && self.statement_type != StatementType::VariableSeq
+                && self.token.token != TokenType::NoToken
+            {
+                for n in 1..number_idents {
                     print!(" ");
                 }
-
-                println!("{:?}", self.token.token);
-
-                for n in 1..=(number_idents + 1){
-                    print!(" ");
-                }
-                println!("{}", self.token.lexema);
+                println!("{} {:?}", self.token.lexema, self.val_type);
             }
 
             for node in &self.nodes {
                 node.print_grammar_tree(number_idents + 1);
             }
-
         }
 
-        pub fn print_syntax_tree(&self, number_idents: u32){
-            if self.statement_type != StatementType::Sequence && self.statement_type != StatementType::VariableSeq && self.token.token != TokenType::NoToken{
+        pub fn print_syntax_tree(&self, number_idents: u32) {
+            if self.statement_type != StatementType::Sequence
+                && self.statement_type != StatementType::VariableSeq
+                && self.token.token != TokenType::NoToken
+            {
                 for n in 1..number_idents {
                     print!(" ");
                 }
@@ -295,39 +433,46 @@ mod compiler{
             for node in &self.nodes {
                 node.print_syntax_tree(number_idents + 1);
             }
-
         }
-
     }
-   
     pub fn null_token() -> Token {
         let result = Token {
             token: TokenType::NoToken,
             lexema: String::from(""),
-            line: 0
+            line: 0,
         };
         return result;
     }
-    impl Token{
-        pub fn copy_token(&self) -> Token{
-            let new_token: Token = Token { token: self.token, lexema: self.lexema.clone(), line: self.line };
+    impl Token {
+        pub fn copy_token(&self) -> Token {
+            let new_token: Token = Token {
+                token: self.token,
+                lexema: self.lexema.clone(),
+                line: self.line,
+            };
             return new_token;
         }
     }
 
-    pub mod scanner{
-        use super::TokenType;
+    pub mod scanner {
         use super::Token;
+        use super::TokenType;
         use std::fs;
-        use std::io::BufReader;
         use std::io::prelude::*;
-        
+        use std::io::BufReader;
         //Son los estados de la máquina para el autómata
         #[derive(Debug, PartialEq, Eq)]
-        enum StateType{
-            Start = 1, Id, Num, CommentLine, CommentBlock, Error, IsDone
+        enum StateType {
+            Start = 1,
+            Id,
+            Num,
+            CommentLine,
+            CommentBlock,
+            Error,
+            IsDone,
+            Decimal,
         }
-        pub struct Scanner{
+        pub struct Scanner {
             file_name: String,
             file_buffer: BufReader<fs::File>,
             current_pos: usize,
@@ -336,41 +481,43 @@ mod compiler{
             _echo_source: bool,
             initialized: bool,
             line_buff: Vec<char>,
-            in_eof: bool
+            in_eof: bool,
         }
-        impl Scanner{
-            pub fn set_echo_source(&mut self, x: bool){
+        impl Scanner {
+            pub fn set_echo_source(&mut self, x: bool) {
                 self._echo_source = x;
             }
-            pub fn echo_source(&self) -> bool{
+            pub fn echo_source(&self) -> bool {
                 self._echo_source
             }
-            pub fn set_trace(&mut self, x: bool){
+            pub fn set_trace(&mut self, x: bool) {
                 self._trace = x;
             }
-            pub fn trace(&self) -> bool{
+            pub fn trace(&self) -> bool {
                 self._trace
             }
 
-            pub fn get_line(&self) -> u32{
+            pub fn get_line(&self) -> u32 {
                 self.current_line
             }
 
-            pub fn get_pos(&self) -> usize{
+            pub fn get_pos(&self) -> usize {
                 self.current_pos
             }
 
-            fn get_next_char(&mut self) -> char{
+            fn get_next_char(&mut self) -> char {
                 let mut buf = String::new();
                 let zero_bytes: usize = 0;
                 if self.current_pos >= self.line_buff.len() {
-                    let num_bytes = self.file_buffer.read_line(&mut buf).expect("Couldn't read file'");
+                    let num_bytes = self
+                        .file_buffer
+                        .read_line(&mut buf)
+                        .expect("Couldn't read file'");
                     if num_bytes > zero_bytes {
                         self.line_buff = buf.chars().collect();
                         self.current_pos = 0;
                         self.current_line += 1;
-                    }
-                    else{
+                    } else {
                         self.in_eof = true;
                         return '\0';
                     }
@@ -379,15 +526,15 @@ mod compiler{
                 self.current_pos += 1;
                 return result;
             }
-            fn unget_next_char(&mut self){
+            fn unget_next_char(&mut self) {
                 if !self.in_eof {
                     self.current_pos -= 1;
                 }
             }
-            
-            pub fn new(file_name: &str, token_trace: bool) -> Scanner{
 
-                let file = fs::File::open(file_name).expect("Please, to use the program use lexic-analyzer <filename>");
+            pub fn new(file_name: &str, token_trace: bool) -> Scanner {
+                let file = fs::File::open(file_name)
+                    .expect("Please, to use the program use lexic-analyzer <filename>");
                 let buf_reader = BufReader::new(file);
 
                 let result = Scanner {
@@ -399,79 +546,44 @@ mod compiler{
                     file_buffer: buf_reader,
                     initialized: false,
                     line_buff: vec![],
-                    in_eof: false
+                    in_eof: false,
                 };
                 return result;
             }
 
-            fn is_delimiter (&self, c: char) -> bool{
+            fn is_delimiter(&self, c: char) -> bool {
                 c == ' ' || c == '\t' || c == '\n'
             }
 
-            fn is_reserved_word(&mut self, lexema: &str)-> TokenType{
-               match lexema {
-                   "program" => {
-                       return TokenType::TK_PROG
-                   }
-                   "if" => {
-                       return TokenType::TK_IF
-                   }
-                   "fi" => {
-                       return TokenType::TK_FI
-                   }
-                   "else" => {
-                       return TokenType::TK_ELSE
-                   }
-                   "do" => {
-                       return TokenType::TK_DO
-                   }
-                   "until" => {
-                       return TokenType::TK_UNTIL
-                   }
-                   "while" => {
-                       return TokenType::TK_WHILE
-                   }
-                   "read" => {
-                       return TokenType::TK_READ
-                   }
-                   "write" => {
-                       return TokenType::TK_WRITE
-                   }
-                   "float" => {
-                       return TokenType::TK_FLOAT
-                   }
-                   "int" => {
-                       return TokenType::TK_INT
-                   }
-                   "bool" => {
-                       return TokenType::TK_BOOL
-                   }
-                   "not" => {
-                       return TokenType::TK_NOT
-                   }
-                   "and" => {
-                       return TokenType::TK_AND
-                   }
-                   "or" => {
-                       return TokenType::TK_OR
-                   }
-                   "then" => {
-                       return TokenType::TK_THEN
-                   }
-                   "true" => {
+            fn is_reserved_word(&mut self, lexema: &str) -> TokenType {
+                match lexema {
+                    "program" => return TokenType::TK_PROG,
+                    "if" => return TokenType::TK_IF,
+                    "fi" => return TokenType::TK_FI,
+                    "else" => return TokenType::TK_ELSE,
+                    "do" => return TokenType::TK_DO,
+                    "until" => return TokenType::TK_UNTIL,
+                    "while" => return TokenType::TK_WHILE,
+                    "read" => return TokenType::TK_READ,
+                    "write" => return TokenType::TK_WRITE,
+                    "float" => return TokenType::TK_FLOAT,
+                    "int" => return TokenType::TK_INT,
+                    "bool" => return TokenType::TK_BOOL,
+                    "not" => return TokenType::TK_NOT,
+                    "and" => return TokenType::TK_AND,
+                    "or" => return TokenType::TK_OR,
+                    "then" => return TokenType::TK_THEN,
+                    "true" => {
                         return TokenType::TK_TRUE;
-                   }
-                   "false" => {
+                    }
+                    "false" => {
                         return TokenType::TK_FALSE;
-                   }
-                   _ => {
-                       return TokenType::TK_ID
-                   }
-               }
+                    }
+                    _ => return TokenType::TK_ID,
+                }
             }
 
-            pub fn get_token(&mut self) -> Token{
-
+            pub fn get_token(&mut self) -> Token {
                 let mut lexema: String = String::new();
                 let mut token: TokenType = TokenType::TK_ERROR;
                 let mut start_line: u32 = 0;
@@ -486,53 +598,40 @@ mod compiler{
                             if self.in_eof {
                                 state = StateType::IsDone;
                                 token = TokenType::TK_EOF;
-                            }
-                            else if c.is_digit(10) {
+                            } else if c.is_digit(10) {
                                 state = StateType::Num;
-                            }
-                            else if c.is_alphabetic() || c == '_' {
+                            } else if c.is_alphabetic() || c == '_' {
                                 state = StateType::Id;
-                            }
-                            else if self.is_delimiter(c) {
+                            } else if self.is_delimiter(c) {
                                 save = false;
-                            }
-                            else if c == '(' {
+                            } else if c == '(' {
                                 state = StateType::IsDone;
                                 token = TokenType::TK_LPAREN;
-                            }
-                            else if c == ')' {
+                            } else if c == ')' {
                                 state = StateType::IsDone;
                                 token = TokenType::TK_RPAREN;
-                            }
-                            else if c == '{' {
+                            } else if c == '{' {
                                 state = StateType::IsDone;
                                 token = TokenType::TK_LKEY;
-                            }
-                            else if c == '}' {
+                            } else if c == '}' {
                                 state = StateType::IsDone;
                                 token = TokenType::TK_RKEY;
-                            }
-                            else if c == ';' {
+                            } else if c == ';' {
                                 state = StateType::IsDone;
                                 token = TokenType::TK_SEMICOLON;
-                            }
-                            else if c == ',' {
+                            } else if c == ',' {
                                 token = TokenType::TK_COMMA;
                                 state = StateType::IsDone;
-                            }
-                            else if c == '+' {
+                            } else if c == '+' {
                                 token = TokenType::TK_PLUS;
                                 state = StateType::IsDone;
-                            }
-                            else if c == '-' {
+                            } else if c == '-' {
                                 token = TokenType::TK_MINUS;
                                 state = StateType::IsDone;
-                            }
-                            else if c == '*' {
+                            } else if c == '*' {
                                 token = TokenType::TK_TIMES;
                                 state = StateType::IsDone;
-                            }
-                            else if c == '/' {
+                            } else if c == '/' {
                                 token = TokenType::TK_OVER;
                                 state = StateType::IsDone;
                                 let tempC: char = self.get_next_char();
@@ -540,34 +639,28 @@ mod compiler{
                                     state = StateType::CommentLine;
                                     token = TokenType::TK_COMMENT_LINE;
                                     save = false
-                                }
-                                else if tempC == '*'{
+                                } else if tempC == '*' {
                                     state = StateType::CommentBlock;
                                     token = TokenType::TK_COMMENT_BLOCK;
                                     save = false;
-                                }
-                                else{
+                                } else {
                                     self.unget_next_char();
                                 }
-                            }
-                            else if c == '^' {
+                            } else if c == '^' {
                                 token = TokenType::TK_EXP;
                                 state = StateType::IsDone;
-                            }
-                            else if c == '=' {
+                            } else if c == '=' {
                                 token = TokenType::TK_ASSIGN;
                                 state = StateType::IsDone;
                                 let tempC: char = self.get_next_char();
-                                if tempC == '='{
+                                if tempC == '=' {
                                     lexema.push(c);
                                     c = tempC;
                                     token = TokenType::TK_EQ;
-                                }
-                                else {
+                                } else {
                                     self.unget_next_char();
                                 }
-                            }
-                            else if c == '<' {
+                            } else if c == '<' {
                                 token = TokenType::TK_LT;
                                 state = StateType::IsDone;
 
@@ -576,13 +669,10 @@ mod compiler{
                                     lexema.push(c);
                                     c = tempC;
                                     token = TokenType::TK_LTE;
-                                }
-                                else {
+                                } else {
                                     self.unget_next_char();
                                 }
-
-                            }
-                            else if c == '>' {
+                            } else if c == '>' {
                                 token = TokenType::TK_GT;
                                 state = StateType::IsDone;
                                 let tempC: char = self.get_next_char();
@@ -590,12 +680,10 @@ mod compiler{
                                     lexema.push(c);
                                     c = tempC;
                                     token = TokenType::TK_GTE;
-                                }
-                                else {
+                                } else {
                                     self.unget_next_char();
                                 }
-                            }
-                            else if c == '!' {
+                            } else if c == '!' {
                                 token = TokenType::TK_ERROR;
                                 state = StateType::IsDone;
                                 let tempC: char = self.get_next_char();
@@ -603,8 +691,7 @@ mod compiler{
                                     lexema.push(c);
                                     c = tempC;
                                     token = TokenType::TK_DIF;
-                                }
-                                else {
+                                } else {
                                     self.unget_next_char();
                                 }
                             }
@@ -615,6 +702,17 @@ mod compiler{
                                 state = StateType::IsDone;
                                 save = false;
                                 token = TokenType::TK_NUM;
+                            } else if c == '.' {
+                                state = StateType::Decimal;
+                                token = TokenType::TK_DECIMAL;
+                            }
+                        }
+                        StateType::Decimal => {
+                            if !c.is_digit(10) {
+                                self.unget_next_char();
+                                state = StateType::IsDone;
+                                save = false;
+                                token = TokenType::TK_DECIMAL;
                             }
                         }
                         StateType::Id => {
@@ -625,7 +723,6 @@ mod compiler{
                                 token = TokenType::TK_ID;
                             }
                         }
-
                         StateType::CommentLine => {
                             save = false;
                             if self.current_pos >= self.line_buff.len() {
@@ -639,19 +736,14 @@ mod compiler{
                             if (c == '*') && (tempC == '/') {
                                 token = TokenType::TK_COMMENT_BLOCK;
                                 state = StateType::Start;
-                            }
-                            else{
+                            } else {
                                 self.unget_next_char();
                             }
                         }
-
                         //Should never happen
-                        StateType::IsDone => {
-                        }
-                        _ => {
-                        }
+                        StateType::IsDone => {}
+                        _ => {}
                     }
-
                     if save {
                         lexema.push(c);
                     }
@@ -661,52 +753,341 @@ mod compiler{
                         }
                     }
                 }
-                let result_token = Token {token: token, lexema: String::from(lexema), line: start_line};
+                let result_token = Token {
+                    token: token,
+                    lexema: String::from(lexema),
+                    line: start_line,
+                };
                 if self._trace {
-                    println!("({:?},{}, {})", result_token.token, result_token.lexema, result_token.line);
+                    println!(
+                        "({:?},{}, {})",
+                        result_token.token, result_token.lexema, result_token.line
+                    );
                 }
                 return result_token;
             }
         }
     }
 
-    pub mod parser{
-        use super::Token;
-        use super::TokenType;
+    pub mod analyzer {
+        use super::BucketList;
+        use super::StatementType;
         use super::TinyType;
         use super::TreeNode;
+        use std::collections::HashMap;
+
+        pub struct SymbolTable {
+            pub table: HashMap<String, BucketList>,
+            pub init_mem: u32,
+        }
+
+        impl SymbolTable {
+            pub fn new() -> SymbolTable {
+                return SymbolTable {
+                    table: HashMap::new(),
+                    init_mem: 0,
+                };
+            }
+
+            pub fn insert(&mut self, name: &str, lineno: u32, loc: u32, data_type: TinyType) {
+                if !self.table.contains_key(name) {
+                    let new_variable: BucketList = BucketList {
+                        lines: vec![lineno],
+                        mem_location: loc,
+                        data_type: data_type,
+                    };
+                    self.table.insert(String::from(name), new_variable);
+                } else {
+                    self.declarationError(name, lineno, "variable double declaration");
+                }
+            }
+
+            pub fn build_table(&mut self, node: &TreeNode) {
+                match node.statement_type {
+                    StatementType::Program
+                    | StatementType::VariableSeq
+                    | StatementType::Sequence
+                    | StatementType::If
+                    | StatementType::Repeat
+                    | StatementType::While
+                    | StatementType::Read
+                    | StatementType::Write
+                    | StatementType::Not => {
+                        for nodes in &node.nodes {
+                            self.build_table(nodes);
+                        }
+                    }
+                    StatementType::ListVariableDec => {
+                        for nodes in &node.nodes {
+                            self.insert(
+                                &nodes.token.lexema,
+                                nodes.token.line,
+                                self.init_mem,
+                                node.val_type,
+                            );
+                            self.init_mem += 1;
+                        }
+                    }
+                    StatementType::Assignment
+                    | StatementType::Arithmetic
+                    | StatementType::Relational
+                    | StatementType::BooleanExp => {
+                        self.build_table(&node.nodes[0]);
+                        self.build_table(&node.nodes[1]);
+                    }
+                    StatementType::Variable => {
+                        self.lookup(&node.token.lexema, node.token.line);
+                    }
+                    _ => {}
+                }
+            }
+
+            fn error_msg(&mut self, label: &str, name: &str, line: u32, msg: &str) {
+                eprintln!(
+                    "error: line - {} error: {}, msg: {} for {}",
+                    line, label, msg, name
+                );
+            }
+
+            fn declarationError(&mut self, name: &str, line: u32, msg: &str) {
+                self.error_msg("symbol table", name, line, msg);
+            }
+
+            pub fn lookup(&mut self, name: &str, lineno: u32) -> Option<&BucketList> {
+                if !self.table.contains_key(name) {
+                    self.declarationError(name, 0, "variable no declared");
+                } else {
+                    self.table.get_mut(name).unwrap().lines.push(lineno);
+                }
+                return self.table.get(name);
+            }
+
+            pub fn lookup_no_decl(&mut self, name: &str) -> Option<&BucketList> {
+                if !self.table.contains_key(name) {
+                    self.declarationError(name, 0, "variable no declared");
+                }
+                return self.table.get(name);
+            }
+
+            pub fn print(&mut self) {
+                println!("TABLA DE SIMBOLOS");
+                println!("Variable Name  Location  Line Numbers  Data Type");
+                println!("*************  ********  ************  **********");
+                for (name, bucket) in &self.table {
+                    for lines in &bucket.lines {
+                        println!(
+                            "{}  {}  {}  {:?}",
+                            name, bucket.mem_location, lines, bucket.data_type
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    pub mod checker {
+        use super::analyzer::SymbolTable;
         use super::StatementType;
-        use super::{null_tree, new_var, new_literal, new_arithmetic, new_relational, new_assignment,
-                    new_program, new_sequence, new_if, new_repeat, new_while, null_token, new_read,
-                    new_write, new_unary, new_literal_boolean, new_boolean_exp, new_list_dec, new_sequence_var};
+        use super::TinyType;
+        use super::TreeNode;
+
+        fn postProc(node: &mut TreeNode, sym_table: &mut SymbolTable) {
+            match node.statement_type {
+                StatementType::If => {
+                    if node.nodes[0].val_type != TinyType::Boolean {
+                        eprintln!(
+                            "error: line - {} error: if condition is not boolean",
+                            node.token.line
+                        );
+                    }
+                }
+                StatementType::While => {
+                    if node.nodes[0].val_type != TinyType::Boolean {
+                        eprintln!(
+                            "error: line - {} error: while condition is not boolean",
+                            node.token.line
+                        );
+                    }
+                }
+                StatementType::Repeat => {
+                    if node.nodes[0].val_type != TinyType::Boolean {
+                        eprintln!(
+                            "error: line - {} error: repeat condition is not boolean",
+                            node.token.line
+                        );
+                    }
+                }
+                StatementType::Not => {
+                    if node.nodes[0].val_type != TinyType::Boolean {
+                        eprintln!(
+                            "error: line - {} error: not in not a boolean value",
+                            node.token.line
+                        );
+                    }
+                }
+
+                StatementType::BooleanExp => {
+                    if node.nodes[0].val_type == TinyType::Boolean
+                        && node.nodes[1].val_type == TinyType::Boolean {
+                            node.val_type = TinyType::Boolean;
+                    } else{
+                        eprintln!(
+                            "error: line - {} error: cannot compare {:?} to {:?} for {}",
+                            node.token.line,
+                            node.nodes[0].val_type,
+                            node.nodes[1].val_type,
+                            &node.nodes[0].token.lexema
+                        );
+                    }
+                }
+
+                StatementType::Arithmetic => {
+                    if node.nodes[0].val_type != TinyType::Boolean
+                    && node.nodes[0].val_type != TinyType::NoType{
+                        if node.nodes[1].val_type != TinyType::Boolean
+                            && node.nodes[1].val_type != TinyType::NoType{
+                                node.val_type = node.nodes[0].val_type;
+                            }
+                        else{
+                            eprintln!(
+                                "error: line - {} error: cannot do operation {:?} on {:?} for {}",
+                                node.token.line,
+                                node.nodes[0].val_type,
+                                node.val_type,
+                                &node.nodes[0].token.lexema
+                            );
+                        }
+                    }
+                    else{
+                        eprintln!(
+                            "error: line - {} error: cannot do operation {:?} on {:?} for {}",
+                            node.token.line,
+                            node.nodes[0].val_type,
+                            node.val_type,
+                            &node.nodes[0].token.lexema
+                        );
+                    }
+                }
+                StatementType::Relational => {
+                    if node.nodes[0].val_type != TinyType::Boolean
+                        && node.nodes[0].val_type != TinyType::NoType{
+                            if node.nodes[1].val_type != TinyType::Boolean
+                                && node.nodes[1].val_type != TinyType::NoType{
+                                    node.val_type = TinyType::Boolean;
+                                }
+                            else{
+                                eprintln!(
+                                    "error: line - {} error: cannot compare {:?} to {:?} for {}",
+                                    node.token.line,
+                                    node.nodes[0].val_type,
+                                    node.val_type,
+                                    &node.nodes[0].token.lexema
+                                );
+                            }
+                        }
+                        else{
+                            eprintln!(
+                                "error: line - {} error: cannot compare {:?} to {:?} for {}",
+                                node.token.line,
+                                node.nodes[0].val_type,
+                                node.val_type,
+                                &node.nodes[0].token.lexema
+                            );
+                        }
+                }
+                StatementType::Assignment => {
+                    if node.nodes[0].val_type != TinyType::Boolean
+                        && node.nodes[0].val_type != TinyType::NoType
+                    {
+                        if node.nodes[1].val_type != TinyType::Boolean
+                            && node.nodes[1].val_type != TinyType::NoType
+                        {
+                            node.val_type = node.nodes[0].val_type;
+                        } else {
+                            eprintln!(
+                                "error: line - {} error: cannot assign {:?} to {:?} for {}",
+                                node.token.line,
+                                node.nodes[0].val_type,
+                                node.val_type,
+                                &node.nodes[0].token.lexema
+                            );
+                        }
+                    } else {
+                        if node.nodes[1].val_type != TinyType::Boolean {
+                            eprintln!(
+                                "error: line - {} error: cannot assign {:?} to {:?} for {}",
+                                node.token.line,
+                                node.nodes[0].val_type,
+                                node.val_type,
+                                &node.nodes[0].token.lexema
+                            );
+                        } else {
+
+                                node.val_type = node.nodes[0].val_type;
+                        }
+                    }
+                }
+                StatementType::Variable => {
+                    let var = sym_table.lookup_no_decl(&node.token.lexema);
+                    node.val_type = var.unwrap().data_type;
+                }
+                _ => {}
+            }
+        }
+
+        pub fn typeChecking(node: &mut TreeNode, sym_table: &mut SymbolTable) {
+            for child in &mut node.nodes {
+                typeChecking(child, sym_table);
+            }
+            postProc(node, sym_table);
+        }
+    }
+
+    pub mod parser {
         use super::scanner::Scanner;
+        use super::StatementType;
+        use super::TinyType;
+        use super::Token;
+        use super::TokenType;
+        use super::TreeNode;
+        use super::{
+            new_arithmetic, new_assignment, new_boolean_exp, new_if, new_list_dec, new_literal,
+            new_literal_boolean, new_program, new_read, new_relational, new_repeat, new_sequence,
+            new_sequence_var, new_unary, new_var, new_while, new_write, null_token, null_tree,
+        };
 
-        pub struct TokenParser{
+        pub struct TokenParser {
             current_token: Token,
-            program: TreeNode,
+            pub program: TreeNode,
             scanner: Scanner,
-            _error: bool
-
+            _error: bool,
         }
-        pub fn new(scanner: Scanner) -> TokenParser{
-            return TokenParser {current_token: null_token(), program: null_tree(), scanner: scanner, _error: false };
+        pub fn new(scanner: Scanner) -> TokenParser {
+            return TokenParser {
+                current_token: null_token(),
+                program: null_tree(),
+                scanner: scanner,
+                _error: false,
+            };
         }
-        impl TokenParser{
-
-            fn error_msg(&mut self, label: &str, token: &Token, msg: &str){
-                eprintln!("error: line - {} error: {}, token: {:?}, msg: {}", token.line, label, token.token, msg);
+        impl TokenParser {
+            fn error_msg(&mut self, label: &str, token: &Token, msg: &str) {
+                eprintln!(
+                    "error: line - {} error: {}, token: {:?}, msg: {}",
+                    token.line, label, token.token, msg
+                );
                 self._error = true;
             }
 
-            fn type_error(&mut self, token: &Token, msg: &str){
+            fn type_error(&mut self, token: &Token, msg: &str) {
                 self.error_msg("type", token, msg);
             }
 
-            fn syntax_error(&mut self, token: &Token, msg: &str){
+            fn syntax_error(&mut self, token: &Token, msg: &str) {
                 self.error_msg("syntax", token, msg);
             }
 
-            pub fn parse(&mut self)-> &TreeNode{
+            pub fn parse(&mut self) -> &TreeNode {
                 self.current_token = self.get_next_token();
                 let program: Token = self.current_token.copy_token();
                 self.match_token(&TokenType::TK_PROG);
@@ -720,63 +1101,64 @@ mod compiler{
                 return &self.program;
             }
 
-            fn match_token(&mut self, token_match: &TokenType){
+            fn match_token(&mut self, token_match: &TokenType) {
                 if &self.current_token.token == token_match {
                     let new_token = self.get_next_token();
                     self.current_token = new_token;
-                }
-                else{
+                } else {
                     self.syntax_error(&self.current_token.copy_token(), "unexpected token");
                 }
             }
 
-            fn get_next_token(&mut self) -> Token{
+            fn get_next_token(&mut self) -> Token {
                 return self.scanner.get_token();
             }
 
-            pub fn print_grammar_parser(&self){
+            pub fn print_grammar_parser(&self) {
                 println!("ARBOL GRAMATICAL");
                 self.program.print_grammar_tree(1);
             }
 
-            pub fn print_syntax_parser(&self){
+            pub fn print_syntax_parser(&self) {
                 println!("ARBOL SINTACTICO");
                 self.program.print_syntax_tree(0);
             }
 
-
-            fn seq_stmt(&mut self) -> TreeNode{
-
+            fn seq_stmt(&mut self) -> TreeNode {
                 if self.current_token.token == TokenType::TK_RKEY {
                     return new_sequence(&null_tree());
                 }
 
                 let mut retval: TreeNode = new_sequence(&self.stmt());
-                while (self.current_token.token != TokenType::TK_EOF) && (self.current_token.token != TokenType::TK_RKEY) &&
-                    (self.current_token.token != TokenType::TK_ELSE) && (self.current_token.token != TokenType::TK_UNTIL) {
-                        let q: TreeNode = self.stmt();
-                        if (q.token.token != TokenType::NoToken) && (q.statement_type != StatementType::NoType) {
-                            if q.statement_type != StatementType::Comment {
-                                retval.append(&q);
-                            }
+                while (self.current_token.token != TokenType::TK_EOF)
+                    && (self.current_token.token != TokenType::TK_RKEY)
+                    && (self.current_token.token != TokenType::TK_ELSE)
+                    && (self.current_token.token != TokenType::TK_UNTIL)
+                {
+                    let q: TreeNode = self.stmt();
+                    if (q.token.token != TokenType::NoToken)
+                        && (q.statement_type != StatementType::NoType)
+                    {
+                        if q.statement_type != StatementType::Comment {
+                            retval.append(&q);
                         }
-                        else {
-                            break;
-                        }
+                    } else {
+                        break;
                     }
+                }
                 return retval;
             }
 
-            fn seq_declaration(&mut self) -> TreeNode{
-
+            fn seq_declaration(&mut self) -> TreeNode {
                 if self.current_token.token == TokenType::TK_RKEY {
                     return new_sequence_var(&null_tree());
                 }
 
                 let mut retval: TreeNode = new_sequence_var(&self.declaration());
-                while self.current_token.token == TokenType::TK_INT ||
-                self.current_token.token == TokenType::TK_FLOAT ||
-                self.current_token.token == TokenType::TK_BOOL {
+                while self.current_token.token == TokenType::TK_INT
+                    || self.current_token.token == TokenType::TK_FLOAT
+                    || self.current_token.token == TokenType::TK_BOOL
+                {
                     let q: TreeNode = self.declaration();
                     retval.append(&q);
                 }
@@ -791,7 +1173,6 @@ mod compiler{
                         self.match_token(&TokenType::TK_INT);
                         statement = self.list_declaration(&_int);
                         self.match_token(&TokenType::TK_SEMICOLON);
-
                     }
                     TokenType::TK_FLOAT => {
                         let _float: Token = self.current_token.copy_token();
@@ -799,7 +1180,7 @@ mod compiler{
                         statement = self.list_declaration(&_float);
                         self.match_token(&TokenType::TK_SEMICOLON);
                     }
-                    TokenType::TK_BOOL=> {
+                    TokenType::TK_BOOL => {
                         let _bool: Token = self.current_token.copy_token();
                         self.match_token(&TokenType::TK_BOOL);
                         statement = self.list_declaration(&_bool);
@@ -807,22 +1188,24 @@ mod compiler{
                     }
                     _ => {
                         self.current_token = self.get_next_token();
-                        self.syntax_error(&self.current_token.copy_token(), "token in initial list variable declaration");
+                        self.syntax_error(
+                            &self.current_token.copy_token(),
+                            "token in initial list variable declaration",
+                        );
                     }
-                    
                 }
                 return statement;
             }
 
-            fn list_declaration(&mut self, token: &Token) -> TreeNode{
+            fn list_declaration(&mut self, token: &Token) -> TreeNode {
                 let _id: Token = self.current_token.copy_token();
                 self.match_token(&TokenType::TK_ID);
                 let mut first_var: TreeNode = new_var(&_id);
                 let mut val_type: TinyType = TinyType::NoType;
                 match token.token {
-                    TokenType::TK_INT => {val_type = TinyType::Integer}
-                    TokenType::TK_FLOAT => {val_type = TinyType::Float}
-                    TokenType::TK_BOOL => {val_type = TinyType::Boolean}
+                    TokenType::TK_INT => val_type = TinyType::Integer,
+                    TokenType::TK_FLOAT => val_type = TinyType::Float,
+                    TokenType::TK_BOOL => val_type = TinyType::Boolean,
                     _ => {}
                 }
                 first_var.set_type(&val_type);
@@ -838,7 +1221,7 @@ mod compiler{
                 return retval;
             }
 
-            fn stmt(&mut self) -> TreeNode{
+            fn stmt(&mut self) -> TreeNode {
                 let mut statement: TreeNode = null_tree();
                 match self.current_token.token {
                     TokenType::TK_ID => {
@@ -869,7 +1252,10 @@ mod compiler{
                     }
                     _ => {
                         self.current_token = self.get_next_token();
-                        self.syntax_error(&self.current_token.copy_token(), "Code ends before file");
+                        self.syntax_error(
+                            &self.current_token.copy_token(),
+                            "Code ends before file",
+                        );
                     }
                 }
                 return statement;
@@ -882,7 +1268,6 @@ mod compiler{
             }
 
             fn read_stmt(&mut self) -> TreeNode {
-
                 let mut variable: TreeNode = null_tree();
                 let _read: Token = self.current_token.copy_token();
                 self.match_token(&TokenType::TK_READ);
@@ -903,12 +1288,10 @@ mod compiler{
                 self.match_token(&TokenType::TK_LKEY);
                 let selection: TreeNode = self.seq_stmt();
                 self.match_token(&TokenType::TK_RKEY);
-                
                 return new_while(&while_token, &condition, &selection);
             }
 
-            fn if_stmt(&mut self) -> TreeNode{
-
+            fn if_stmt(&mut self) -> TreeNode {
                 let if_token: Token = self.current_token.copy_token();
                 self.match_token(&TokenType::TK_IF);
 
@@ -943,12 +1326,11 @@ mod compiler{
                 self.match_token(&TokenType::TK_LPAREN);
                 let condition: TreeNode = self.b_expression();
                 self.match_token(&TokenType::TK_RPAREN);
-                
-                return new_repeat(&do_token, &condition, &selection);
 
+                return new_repeat(&do_token, &condition, &selection);
             }
 
-            fn assign_stmt(&mut self) -> TreeNode{
+            fn assign_stmt(&mut self) -> TreeNode {
                 let mut variable: TreeNode = null_tree();
                 let _var: Token = self.current_token.copy_token();
                 if _var.token == TokenType::TK_ID {
@@ -960,32 +1342,29 @@ mod compiler{
                 self.match_token(&TokenType::TK_ASSIGN);
                 let rvalue: TreeNode = self.b_expression();
                 return new_assignment(&_assign, &variable, &rvalue);
-
             }
-            fn b_expression(&mut self) -> TreeNode{
+            fn b_expression(&mut self) -> TreeNode {
                 let result: TreeNode = self.b_term();
                 if self.current_token.token == TokenType::TK_OR {
                     let _or: Token = self.current_token.copy_token();
                     self.match_token(&TokenType::TK_OR);
                     return new_boolean_exp(&_or, &result, &self.b_term());
-                }
-                else{
+                } else {
                     return result;
                 }
             }
-            fn b_term (&mut self) -> TreeNode {
+            fn b_term(&mut self) -> TreeNode {
                 let result: TreeNode = self.not_factor();
                 if self.current_token.token == TokenType::TK_AND {
                     let _and: Token = self.current_token.copy_token();
                     self.match_token(&TokenType::TK_AND);
                     return new_boolean_exp(&_and, &result, &self.not_factor());
-                }
-                else{
+                } else {
                     return result;
                 }
             }
 
-            fn not_factor(&mut self) -> TreeNode{
+            fn not_factor(&mut self) -> TreeNode {
                 if self.current_token.token == TokenType::TK_NOT {
                     let _not: Token = self.current_token.copy_token();
                     self.match_token(&TokenType::TK_NOT);
@@ -995,57 +1374,67 @@ mod compiler{
             }
 
             fn b_factor(&mut self) -> TreeNode {
-                if self.current_token.token == TokenType::TK_TRUE ||
-                   self.current_token.token == TokenType::TK_FALSE{
+                if self.current_token.token == TokenType::TK_TRUE
+                    || self.current_token.token == TokenType::TK_FALSE
+                {
                     let _bool: Token = self.current_token.copy_token();
                     self.match_token(&_bool.token);
                     return new_literal_boolean(&_bool);
-
                 }
                 return self.expression();
             }
 
-            fn expression(&mut self) -> TreeNode{
+            fn expression(&mut self) -> TreeNode {
                 let result: TreeNode = self.simple_exp();
-                if self.current_token.token == TokenType::TK_LT || self.current_token.token == TokenType::TK_LTE ||
-                    self.current_token.token == TokenType::TK_GT || self.current_token.token == TokenType::TK_GTE || 
-                    self.current_token.token == TokenType::TK_DIF || self.current_token.token == TokenType::TK_EQ {
-                        let _op = self.current_token.copy_token();
-                        self.match_token(&_op.token);
-                        return new_relational(&_op, &result, &self.simple_exp());
-                    }
-                else {
+                if self.current_token.token == TokenType::TK_LT
+                    || self.current_token.token == TokenType::TK_LTE
+                    || self.current_token.token == TokenType::TK_GT
+                    || self.current_token.token == TokenType::TK_GTE
+                    || self.current_token.token == TokenType::TK_DIF
+                    || self.current_token.token == TokenType::TK_EQ
+                {
+                    let _op = self.current_token.copy_token();
+                    self.match_token(&_op.token);
+                    return new_relational(&_op, &result, &self.simple_exp());
+                } else {
                     return result;
                 }
             }
-            fn simple_exp(&mut self) -> TreeNode{
+            fn simple_exp(&mut self) -> TreeNode {
                 let result: TreeNode = self.term();
-                if self.current_token.token == TokenType::TK_MINUS || self.current_token.token == TokenType::TK_PLUS {
+                if self.current_token.token == TokenType::TK_MINUS
+                    || self.current_token.token == TokenType::TK_PLUS
+                {
                     let _op = self.current_token.copy_token();
                     self.match_token(&_op.token);
                     return new_arithmetic(&_op, &result, &self.term());
-                }
-                else{
+                } else {
                     return result;
                 }
             }
-            fn term(&mut self) -> TreeNode{
+            fn term(&mut self) -> TreeNode {
                 let result: TreeNode = self.factor();
-                if self.current_token.token == TokenType::TK_TIMES || self.current_token.token == TokenType::TK_OVER {
+                if self.current_token.token == TokenType::TK_TIMES
+                    || self.current_token.token == TokenType::TK_OVER
+                {
                     let _op = self.current_token.copy_token();
                     self.match_token(&_op.token);
                     return new_arithmetic(&_op, &result, &self.factor());
-                } 
-                else{
+                } else {
                     return result;
                 }
             }
-            fn factor(&mut self) -> TreeNode{
-                match self.current_token.token{
+            fn factor(&mut self) -> TreeNode {
+                match self.current_token.token {
+                    TokenType::TK_DECIMAL => {
+                        let _decimal: Token = self.current_token.copy_token();
+                        self.match_token(&TokenType::TK_DECIMAL);
+                        return new_literal(&_decimal, TinyType::Float);
+                    }
                     TokenType::TK_NUM => {
                         let _num: Token = self.current_token.copy_token();
                         self.match_token(&TokenType::TK_NUM);
-                        return new_literal(&_num);
+                        return new_literal(&_num, TinyType::Integer);
                     }
                     TokenType::TK_ID => {
                         let _id: Token = self.current_token.copy_token();
@@ -1059,7 +1448,10 @@ mod compiler{
                         return exp;
                     }
                     _ => {
-                        self.syntax_error(&self.current_token.copy_token(), "Code ends before file");
+                        self.syntax_error(
+                            &self.current_token.copy_token(),
+                            "Code ends before file",
+                        );
                         return null_tree();
                     }
                 }
@@ -1072,18 +1464,24 @@ mod compiler{
 use std::env;
 
 // use crate::compiler::Token;
+use crate::compiler::analyzer;
+use crate::compiler::checker::typeChecking;
 use crate::compiler::parser;
 use crate::compiler::scanner;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let mut scanner  = scanner::Scanner::new(&args[args.len()-1], true);
+    let mut scanner = scanner::Scanner::new(&args[args.len() - 1], true);
 
     let mut parser: parser::TokenParser = parser::new(scanner);
     parser.parse();
+    let mut symbol_table: analyzer::SymbolTable = analyzer::SymbolTable::new();
+    symbol_table.build_table(&parser.program);
+
+    typeChecking(&mut parser.program, &mut symbol_table);
 
     parser.print_grammar_parser();
     parser.print_syntax_parser();
-
+    symbol_table.print();
 }
