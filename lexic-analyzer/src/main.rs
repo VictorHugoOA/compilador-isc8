@@ -769,6 +769,109 @@ mod compiler {
         }
     }
 
+    pub mod codegen {
+        use super::TreeNode;
+        use super::analyzer::SymbolTable;
+        use super::StatementType;
+
+        struct CodeGenResult {
+            emit_loc: u64,
+            high_emit_loc: u64,
+
+        }
+
+        impl CodeGenResult {
+            pub fn new() -> CodeGenResult {
+                CodeGenResult {
+                    emit_loc: 0,
+                    high_emit_loc: 0
+                }
+            }
+            pub fn code_gen(&mut self, node: &TreeNode, st: &SymbolTable){
+                self.emit_comment("TINY Compilation to TM Code");
+                self.emit_comment("Standard prelude:");
+                self.emit_rm("LD", 6, 0, 0, "load maxaddress from location 0");
+                self.emit_rm("ST", 0, 0, 0, "clear location 0");
+                self.emit_comment("End of standard prelude.");
+                self.code_gen_helper(node, st);
+                self.emit_comment("End of execution.");
+                self.emit_ro("HALT", 0, 0, 0, "");
+            }
+    
+            fn emit_comment(&mut self, comment: &str){
+                println!("; {}", comment);
+            }
+
+            fn emit_rm(&mut self, op: &str, r: u64, d: u64, s: u64, comment: &str){
+                println!("{}: {} {},{}({})", self.emit_loc, op, r, d, s);
+                self.emit_loc += 1;
+                self.emit_comment(comment);
+                if self.emit_loc > self.high_emit_loc {
+                    self.high_emit_loc = self.emit_loc;
+                }
+            }
+
+            fn emit_ro(&mut self, op: &str, r: u64, s: u64, t: u64, comment: &str){
+                println!("{}: {} {},{},{}", self.emit_loc, op, r, s, t);
+                self.emit_loc += 1;
+                self.emit_comment(comment);
+                if self.emit_loc > self.high_emit_loc {
+                    self.high_emit_loc = self.emit_loc;
+                }
+            }
+
+            fn emit_skip(&mut self, many: u64) -> u64{
+                let mut i = self.emit_loc;
+                self.emit_loc += many;
+                if self.high_emit_loc < self.emit_loc {
+                    self.high_emit_loc = self.emit_loc;
+                }
+                return i;
+            }
+    
+            fn emit_backup(&mut self, loc: u64){
+                if loc > self.high_emit_loc {
+                    self.emit_comment("BUG in emit backup");
+                    self.emit_loc = loc;
+                }
+            }
+
+            fn emit_restore(&mut self){
+                self.emit_loc = self.high_emit_loc;
+            }
+
+            fn emit_rm_abs(&mut self, op: &str, r: u64, a: u64, comment: &str){
+                println!("{}: {} {},{}({})", self.emit_loc, op, r, (a-(self.emit_loc-1)), 7);
+                self.emit_loc += 1;
+                self.emit_comment(comment);
+                if self.emit_loc > self.high_emit_loc {
+                    self.high_emit_loc = self.emit_loc;
+                }
+            }
+    
+            fn code_gen_helper(&mut self, node: &TreeNode, st: &SymbolTable){
+                match node.statement_type {
+                    StatementType::Program => {
+                        for child in &node.nodes {
+                            self.code_gen_helper(child, st);
+                        }
+                    },
+                    StatementType::Sequence => {
+                        for child in &node.nodes {
+                            self.code_gen_helper(child, st);
+                        }
+                    },
+                    StatementType::VariableSeq => {
+                        for child in &node.nodes {
+                            self.code_gen_helper(child, st);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
     pub mod analyzer {
         use super::BucketList;
         use super::StatementType;
@@ -1465,7 +1568,7 @@ use std::env;
 
 // use crate::compiler::Token;
 use crate::compiler::analyzer;
-use crate::compiler::checker::typeChecking;
+use crate::compiler::checker;
 use crate::compiler::parser;
 use crate::compiler::scanner;
 
@@ -1479,7 +1582,7 @@ fn main() {
     let mut symbol_table: analyzer::SymbolTable = analyzer::SymbolTable::new();
     symbol_table.build_table(&parser.program);
 
-    typeChecking(&mut parser.program, &mut symbol_table);
+    checker::typeChecking(&mut parser.program, &mut symbol_table);
 
     parser.print_grammar_parser();
     parser.print_syntax_parser();
