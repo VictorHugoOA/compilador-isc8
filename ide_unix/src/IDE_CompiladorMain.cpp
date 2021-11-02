@@ -334,6 +334,7 @@ void IDE_CompiladorFrame::OnCompile(wxCommandEvent& event){
 
     wxString OutTokenString(wxT(""));
     wxString SymbolString(wxT(""));
+    wxString IntermediateString(wxT(""));
     wxArrayString OutSyntaxArray;
     wxArrayString OutGrammarArray;
     wxString ErrorsString(wxT(""));
@@ -366,9 +367,15 @@ void IDE_CompiladorFrame::OnCompile(wxCommandEvent& event){
     }
 
     Result = OutputStream.ReadLine();
-    while(!Result.IsEmpty()){
+    while(!Result.IsSameAs("; TINY Compilation to TM Code")){
         SymbolString.Append(Result);
         SymbolString.Append("\n");
+        Result = OutputStream.ReadLine();
+    }
+
+    while(!Result.IsEmpty()){ 
+        IntermediateString.Append(Result);
+        IntermediateString.Append("\n");
         Result = OutputStream.ReadLine();
     }
 
@@ -383,6 +390,7 @@ void IDE_CompiladorFrame::OnCompile(wxCommandEvent& event){
     phases->SetTreeFromStringArray(OutSyntaxArray);
     phases->SetSemanticTreeFromStringArray(OutGrammarArray);
     phases->SetSymbolTable(SymbolString);
+    phases->SetGenCode(IntermediateString);
 
     results->setErrorText(ErrorsString);
 
