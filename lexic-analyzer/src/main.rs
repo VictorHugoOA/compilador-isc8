@@ -773,10 +773,12 @@ mod compiler {
         use super::TreeNode;
         use super::analyzer::SymbolTable;
         use super::StatementType;
+        use super::TokenType;
 
-        struct CodeGenResult {
-            emit_loc: u64,
-            high_emit_loc: u64,
+        pub struct CodeGenResult {
+            emit_loc: i64,
+            high_emit_loc: i64,
+            tmp_offset: i64
 
         }
 
@@ -784,10 +786,11 @@ mod compiler {
             pub fn new() -> CodeGenResult {
                 CodeGenResult {
                     emit_loc: 0,
-                    high_emit_loc: 0
+                    high_emit_loc: 0,
+                    tmp_offset: 0
                 }
             }
-            pub fn code_gen(&mut self, node: &TreeNode, st: &SymbolTable){
+            pub fn code_gen(&mut self, node: &TreeNode, st: &mut SymbolTable){
                 self.emit_comment("TINY Compilation to TM Code");
                 self.emit_comment("Standard prelude:");
                 self.emit_rm("LD", 6, 0, 0, "load maxaddress from location 0");
@@ -802,7 +805,7 @@ mod compiler {
                 println!("; {}", comment);
             }
 
-            fn emit_rm(&mut self, op: &str, r: u64, d: u64, s: u64, comment: &str){
+            fn emit_rm(&mut self, op: &str, r: i64, d: i64, s: i64, comment: &str){
                 println!("{}: {} {},{}({})", self.emit_loc, op, r, d, s);
                 self.emit_loc += 1;
                 self.emit_comment(comment);
@@ -811,7 +814,7 @@ mod compiler {
                 }
             }
 
-            fn emit_ro(&mut self, op: &str, r: u64, s: u64, t: u64, comment: &str){
+            fn emit_ro(&mut self, op: &str, r: i64, s: i64, t: i64, comment: &str){
                 println!("{}: {} {},{},{}", self.emit_loc, op, r, s, t);
                 self.emit_loc += 1;
                 self.emit_comment(comment);
@@ -820,7 +823,7 @@ mod compiler {
                 }
             }
 
-            fn emit_skip(&mut self, many: u64) -> u64{
+            fn emit_skip(&mut self, many: i64) -> i64{
                 let mut i = self.emit_loc;
                 self.emit_loc += many;
                 if self.high_emit_loc < self.emit_loc {
@@ -829,7 +832,7 @@ mod compiler {
                 return i;
             }
     
-            fn emit_backup(&mut self, loc: u64){
+            fn emit_backup(&mut self, loc: i64){
                 if loc > self.high_emit_loc {
                     self.emit_comment("BUG in emit backup");
                     self.emit_loc = loc;
@@ -840,7 +843,7 @@ mod compiler {
                 self.emit_loc = self.high_emit_loc;
             }
 
-            fn emit_rm_abs(&mut self, op: &str, r: u64, a: u64, comment: &str){
+            fn emit_rm_abs(&mut self, op: &str, r: i64, a: i64, comment: &str){
                 println!("{}: {} {},{}({})", self.emit_loc, op, r, (a-(self.emit_loc-1)), 7);
                 self.emit_loc += 1;
                 self.emit_comment(comment);
@@ -849,7 +852,7 @@ mod compiler {
                 }
             }
     
-            fn code_gen_helper(&mut self, node: &TreeNode, st: &SymbolTable){
+            fn code_gen_helper(&mut self, node: &TreeNode, st: &mut SymbolTable){
                 match node.statement_type {
                     StatementType::Program => {
                         for child in &node.nodes {
@@ -865,7 +868,150 @@ mod compiler {
                         for child in &node.nodes {
                             self.code_gen_helper(child, st);
                         }
-                    }
+                    },
+                    StatementType::If => {
+                        self.emit_comment("-> if");
+                        self.code_gen_helper(&node.nodes[0], st);
+                        let mut saved_loc_1 = self.emit_skip(1);
+                        self.emit_comment("if: jump to else belongs here");
+
+                        self.code_gen_helper(&node.nodes[1], st);
+                        let mut saved_loc_2 = self.emit_skip(1);
+                        let mut current_loc = self.emit_skip(0);
+                        self.emit_backup(saved_loc_1);
+                        self.emit_rm_abs("JEQ", 0, current_loc, "jmp to end");
+                        self.emit_restore();
+
+                        self.code_gen_helper(&node.nodes[2], st);
+                        current_loc = self.emit_skip(0);
+                        self.emit_backup(saved_loc_2);
+                        self.emit_rm_abs("LDA", 7, current_loc, "jmp to end");
+                        self.emit_restore();
+                        self.emit_comment("<- if");
+                    },
+                    StatementType::Repeat => {
+                        self.emit_comment("-> repeat");
+                        let mut saved_loc_1 = self.emit_skip(0);
+                        self.emit_comment("repeat: jump after body comes back here");
+                        self.code_gen_helper(&node.nodes[1], st);
+                        self.code_gen_helper(&node.nodes[0], st);
+                        self.emit_rm_abs("JEQ", 0, saved_loc_1, "repeat: jmp back to body");
+                        self.emit_comment("<- repeat");
+                    },
+                    StatementType::While => {
+                        self.emit_comment("-> while");
+                        let mut saved_loc_1 = self.emit_skip(1);
+                        self.code_gen_helper(&node.nodes[0], st);
+                        self.emit_comment("while: jmp here for check");
+                        let mut current_loc = self.emit_skip(0);
+                        self.code_gen_helper(&node.nodes[1], st);                        
+                        self.emit_comment("<- while");
+                    },
+                    StatementType::Assignment => {
+                        self.emit_comment("-> assign");
+                        self.code_gen_helper(&node.nodes[1], st);
+                        let mut loc = st.lookup_no_decl(&node.nodes[0].token.lexema).unwrap().mem_location;
+                        self.emit_rm("ST", 0, loc.into(), 5, "assign: store value");
+                        self.emit_comment("<- assign");
+                    },
+                    StatementType::Read => {
+                        self.emit_ro("IN", 0, 0, 0, "read value");
+                        let loc = st.lookup_no_decl(&node.nodes[0].token.lexema).unwrap().mem_location;
+                        self.emit_rm("ST", 0, loc.into(), 5, "read: store value");
+                    },
+                    StatementType::Write => {
+                        self.code_gen_helper(&node.nodes[0], st);
+                        self.emit_ro("OUT", 0, 0, 0, "write ac");
+                    },
+                    StatementType::Literal => {
+                        self.emit_comment("-> const");
+                        self.emit_rm("LDC", 0, node.token.lexema.parse().unwrap_or(0), 0, "load const");
+                        self.emit_comment("<- const");
+                    },
+                    StatementType::Variable => {
+                        self.emit_comment("-> id");
+                        let loc: u32 = st.lookup_no_decl(&node.token.lexema).unwrap().mem_location;
+                        self.emit_rm("LD", 0, loc.into(), 5, "load id value");
+                        self.emit_comment("<- id");
+                    },
+                    StatementType::Arithmetic => {
+                        self.emit_comment("-> op");
+                        self.code_gen_helper(&node.nodes[0], st);
+                        self.emit_rm("ST", 0, self.tmp_offset-1, 6, "op: push left");
+                        self.code_gen_helper(&node.nodes[1], st);
+                        self.emit_rm("LD", 1, self.tmp_offset+1, 6, "op:push right");
+                        self.tmp_offset += 1;
+                        match node.token.token {
+                            TokenType::TK_PLUS => {
+                                self.emit_ro("ADD", 0, 1, 0, "op: +");
+                            },
+                            TokenType::TK_MINUS => {
+                                self.emit_ro("SUB", 0, 1, 0, "op: -");
+                            },
+                            TokenType::TK_TIMES => {
+                                self.emit_ro("MUL", 0, 1, 0, "op: *");
+                            },
+                            TokenType::TK_OVER => {
+                                self.emit_ro("DIV", 0, 1, 0, "op: /");
+                            }
+                            _ => {}
+                        }
+                        self.emit_comment("<- op");
+                    },
+                    StatementType::Relational => {
+                        self.emit_comment("-> rel");
+                        self.code_gen_helper(&node.nodes[0], st);
+                        self.emit_rm("ST", 0, self.tmp_offset-1, 6, "rel: push left");
+                        self.code_gen_helper(&node.nodes[1], st);
+                        self.emit_rm("LD", 1, self.tmp_offset+1, 6, "rel:push right");
+                        self.tmp_offset += 1;
+                        match node.token.token {
+                            TokenType::TK_LT => {
+                                self.emit_ro("SUB", 0, 1, 0, "op <");
+                                self.emit_rm("JLT", 0, 2, 7, "br if true");
+                                self.emit_rm("LDC", 0, 0, 0, "false case");
+                                self.emit_rm("LDA", 7, 1, 7, "unconditional jmp");
+                                self.emit_rm("LDC", 0, 1, 0, "true case");
+                            },
+                            TokenType::TK_LTE => {
+                                self.emit_ro("SUB", 0, 1, 0, "op <=");
+                                self.emit_rm("JLE", 0, 2, 7, "br if true");
+                                self.emit_rm("LDC", 0, 0, 0, "false case");
+                                self.emit_rm("LDA", 7, 1, 7, "unconditional jmp");
+                                self.emit_rm("LDC", 0, 1, 0, "true case");
+                            },
+                            TokenType::TK_GT => {
+                                self.emit_ro("SUB", 0, 1, 0, "op >");
+                                self.emit_rm("JGT", 0, 2, 7, "br if true");
+                                self.emit_rm("LDC", 0, 0, 0, "false case");
+                                self.emit_rm("LDA", 7, 1, 7, "unconditional jmp");
+                                self.emit_rm("LDC", 0, 1, 0, "true case");
+                            },
+                            TokenType::TK_GTE => {
+                                self.emit_ro("SUB", 0, 1, 0, "op >=");
+                                self.emit_rm("JGE", 0, 2, 7, "br if true");
+                                self.emit_rm("LDC", 0, 0, 0, "false case");
+                                self.emit_rm("LDA", 7, 1, 7, "unconditional jmp");
+                                self.emit_rm("LDC", 0, 1, 0, "true case");
+                            },
+                            TokenType::TK_EQ => {
+                                self.emit_ro("SUB", 0, 1, 0, "op ==");
+                                self.emit_rm("JEQ", 0, 2, 7, "br if true");
+                                self.emit_rm("LDC", 0, 0, 0, "false case");
+                                self.emit_rm("LDA", 7, 1, 7, "unconditional jmp");
+                                self.emit_rm("LDC", 0, 1, 0, "true case");
+                            },
+                            TokenType::TK_DIF => {
+                                self.emit_ro("SUB", 0, 1, 0, "op <");
+                                self.emit_rm("JNE", 0, 2, 7, "br if true");
+                                self.emit_rm("LDC", 0, 0, 0, "false case");
+                                self.emit_rm("LDA", 7, 1, 7, "unconditional jmp");
+                                self.emit_rm("LDC", 0, 1, 0, "true case");
+                            },
+                            _ => {}
+                        }
+                        self.emit_comment("<- op");
+                    },
                     _ => {}
                 }
             }
@@ -1568,9 +1714,10 @@ use std::env;
 
 // use crate::compiler::Token;
 use crate::compiler::analyzer;
-use crate::compiler::checker;
+use crate::compiler::checker::typeChecking;
 use crate::compiler::parser;
 use crate::compiler::scanner;
+use crate::compiler::codegen;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -1582,9 +1729,12 @@ fn main() {
     let mut symbol_table: analyzer::SymbolTable = analyzer::SymbolTable::new();
     symbol_table.build_table(&parser.program);
 
-    checker::typeChecking(&mut parser.program, &mut symbol_table);
+    typeChecking(&mut parser.program, &mut symbol_table);
+
+    let mut code_gen: codegen::CodeGenResult = codegen::CodeGenResult::new();
 
     parser.print_grammar_parser();
     parser.print_syntax_parser();
     symbol_table.print();
+    code_gen.code_gen(&parser.program, &mut symbol_table);
 }
