@@ -779,7 +779,6 @@ mod compiler {
             emit_loc: i64,
             high_emit_loc: i64,
             tmp_offset: i64
-
         }
 
         impl CodeGenResult {
@@ -790,6 +789,7 @@ mod compiler {
                     tmp_offset: 0
                 }
             }
+
             pub fn code_gen(&mut self, node: &TreeNode, st: &mut SymbolTable){
                 self.emit_comment("TINY Compilation to TM Code");
                 self.emit_comment("Standard prelude:");
@@ -922,6 +922,20 @@ mod compiler {
                     StatementType::Write => {
                         self.code_gen_helper(&node.nodes[0], st);
                         self.emit_ro("OUT", 0, 0, 0, "write ac");
+                    },
+                    StatementType::LiteralBoolExp => {
+                        self.emit_comment("-> literal boolean");
+                        let value: &str = &node.token.lexema;
+                        match value {
+                            "true" => {
+                                self.emit_rm("LDC", 0, 1, 0, "load const true value");
+                            },
+                            "false" => {
+                                self.emit_rm("LDC", 0, 0, 0, "load const false value");
+                            }
+                            _ =>{}
+                        }
+                        self.emit_comment("<- literal boolean");
                     },
                     StatementType::Literal => {
                         self.emit_comment("-> const");
