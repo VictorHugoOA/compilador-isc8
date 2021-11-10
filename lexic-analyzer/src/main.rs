@@ -948,6 +948,32 @@ mod compiler {
                         self.emit_rm("LD", 0, loc.into(), 5, "load id value");
                         self.emit_comment("<- id");
                     },
+                    StatementType::Not => {
+                        self.emit_comment("-> bool expression");
+                        self.code_gen_helper(&node.nodes[0], st);
+                        self.emit_rm("ST", 0, self.temp_offset+1, 6, "bool op: push left");
+                        self.tmp_offset += 1;
+                        selr.emit_ro("NOT", 0, 1, 0, "bool op: not");
+                        self.emit_comment("-> bool expression");
+                    },
+                    StatementType::BooleanExp => {
+                        self.emit_comment("-> bool expression");
+                        self.code_gen_helper(&node.nodes[0], st);
+                        self.emit_rm("ST", 0, self.temp_offset-1, 6, "bool op: push left");
+                        self.code_gen_helper(&nodde.nodes[1], st);
+                        self.emit_rm("LD", 1, self.tmp_offset+1, 6, "bool op: push right");
+                        self.tmp_offset += 1;
+                        match node.token.token {
+                            TokenType::TK_AND => {
+                                self.emit_ro("AND", 0, 1, 0, "bool op: and");
+                            },
+                            TokenType::TK_OR => {
+                                self.emit_ro("OR", 0, 1, 0, "bool op: or");
+                            }
+                            _ => {}
+                        }
+                        self.emit_comment("-> bool expression");
+                    },
                     StatementType::Arithmetic => {
                         self.emit_comment("-> op");
                         self.code_gen_helper(&node.nodes[0], st);
