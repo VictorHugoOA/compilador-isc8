@@ -110,6 +110,12 @@ void CompilerPhases::SetSymbolTable(wxString &Text){
     SymbolTable->SetReadOnly(true);
 }
 
+void CompilerPhases::SetGenCode(wxString &Text){
+    MediumCodePhase->SetReadOnly(false);
+    MediumCodePhase->SetText(Text);
+    MediumCodePhase->SetReadOnly(true);
+}
+
 CompilerPhases::~CompilerPhases()
 {
     //dtor

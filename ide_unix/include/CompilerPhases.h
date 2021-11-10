@@ -25,6 +25,7 @@ class CompilerPhases: public wxNotebook
 
         void SetTextLexic(wxString& Text);
         void SetSymbolTable(wxString& Text);
+        void SetGenCode(wxString &Text);
 
     protected:
 
