@@ -2,7 +2,7 @@ program {
      int x, y;
      float a, b;
      bool c, d;
-     c = not true;
+     c = true;
      x=5; // comentario 1
      y=4; /* comentario 2 */
      a=0.0;
@@ -14,9 +14,10 @@ program {
                x=x-2;
                a=a*x+b;
                y=y-1;
-          } fi
-          while(a==3){ 
-               write a;
+          } 
+fi
+while(a==3){ 
+write a;
           }
      } until(c);
 }

@@ -951,16 +951,16 @@ mod compiler {
                     StatementType::Not => {
                         self.emit_comment("-> bool expression");
                         self.code_gen_helper(&node.nodes[0], st);
-                        self.emit_rm("ST", 0, self.temp_offset+1, 6, "bool op: push left");
+                        self.emit_rm("ST", 0, self.tmp_offset+1, 6, "bool op: push left");
                         self.tmp_offset += 1;
-                        selr.emit_ro("NOT", 0, 1, 0, "bool op: not");
-                        self.emit_comment("-> bool expression");
+                        self.emit_ro("NOT", 0, 1, 0, "bool op: not");
+                        self.emit_comment("<- bool expression");
                     },
                     StatementType::BooleanExp => {
                         self.emit_comment("-> bool expression");
                         self.code_gen_helper(&node.nodes[0], st);
-                        self.emit_rm("ST", 0, self.temp_offset-1, 6, "bool op: push left");
-                        self.code_gen_helper(&nodde.nodes[1], st);
+                        self.emit_rm("ST", 0, self.tmp_offset-1, 6, "bool op: push left");
+                        self.code_gen_helper(&node.nodes[1], st);
                         self.emit_rm("LD", 1, self.tmp_offset+1, 6, "bool op: push right");
                         self.tmp_offset += 1;
                         match node.token.token {
